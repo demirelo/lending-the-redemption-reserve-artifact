@@ -1,0 +1,88 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{patterns,decorations.pathreplacing,calc}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Pf}{P_f}
+\newcommand{\gbar}{\bar\gamma}
+\newcommand{\fsbar}{\bar f_s}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\pos}[1]{\left(#1\right)^{+}}
+\newcommand{\op}[1]{{\normalfont\textsc{#1}}}
+\newcommand{\vone}{\citep{dabc2026}}
+\newcommand{\J}{\mathcal{J}}
+\setlist{itemsep=2pt,topsep=4pt}
+\input{sections/testnums}
+\input{sections/empnums}
+\input{sections/rewardnums}
+
+\title{\textbf{Lending the Redemption Reserve:\\ Collateral Release and Credit Limits}}
+\author{\"Omer Demirel\\[2pt] {\normalsize Snowfall Finance LLC}}
+\date{November 2026}
+\hypersetup{pdftitle={Lending the Redemption Reserve: Collateral Release and Credit Limits},pdfauthor={Ömer Demirel},pdfsubject={Reserve safety, collateral release, credit capacity, and participation}}
+
+\emergencystretch=1.5em
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+An issuer that lends its redemption reserve against its own locked tokens can pay every redemption today and still fail after a borrower repays part of a loan and withdraws collateral. What the issuer may safely lend is therefore set by the withdrawal rights that its loans promise. We characterize coverage after every permitted repayment for a fixed issuance curve. With proportional release and no extra reserve, every individual loan must be bounded by the floor value of its collateral, whatever the allocation of debt. With a committed reserve, a sorted debt-per-collateral envelope gives the exact reserve requirement and the maximum aggregate credit, and equal debt ratios minimize the requirement. Our main result ties that requirement to incentives: under stated zero-fee coalition assumptions, the required reserve equals the most that borrowers can gain by repaying in part, redeeming what is released and abandoning the rest, so that at the maximum admitted credit the strategy can exhaust a reserve that others funded. A contract that releases collateral along the curve lends against the reserve value of a whole lock without that exposure, at the cost of less flexible withdrawals and stronger conditions on repricing and splitting. The floor-capped contract on which these results build has a machine-checked safety proof and a tested implementation; the two extensions are proved on paper and checked in exact arithmetic.
+\end{abstract}
+
+\section{Introduction}
+
+A token issuer that sells along a price curve and promises to buy back along the same curve holds a \emph{redemption reserve}: the cash that the curve says is owed to the tokens outstanding. Several designs let a holder lock tokens with the issuer and borrow from that reserve against them, with no price oracle and no liquidation. Nirvana offered such loans in 2022 \citep{nirvanadocs}; Baseline's current system lends against its floor at zero interest \citep{baselinedocs}; and debt-aware bonding curves \vone{} combine a stepped curve with a credit facility of the same kind. The idea that makes this possible is simple. A locked token cannot be redeemed, so the reserve that backs it is not needed while the lock lasts, and a loan no larger than that reserve leaves the claims of all other holders covered.
+
+That argument is about one moment. A loan also carries a right: the borrower may repay, in whole or in part, and take collateral back. Each such repayment changes which tokens can be redeemed, and with it what the reserve must cover. A loan book can be covered today and fail tomorrow, after a repayment that the contract allowed and without any change in prices. Take the reserve function $R(q)=q+q^2/2$, a supply of one token, all of it locked in a single loan of $1.5$, and no surplus. The loan is exactly covered; when the borrower repays half and takes half the collateral back, the issuer has received $0.75$ and owes $0.875$ for the released half.
+
+This paper asks what an issuer can lend when coverage must hold in every state that borrowers can reach by repaying. The answer depends on the \emph{release rule}, the collateral that a repayment returns, and it has four parts.
+
+\paragraph{Coverage under repayment rights.} For a fixed curve and any release rule, a book is safe if and only if residual debt never exceeds the committed reserve plus the reserve value of the residual lock, over all residual configurations that repayments can reach (\cref{cr:kernel}). Coverage of the current state is the special case of no repayment.
+
+\paragraph{The floor cap, and the exact reserve beyond it.} If a repayment releases collateral in proportion and nothing is committed beyond the curve reserve, every individual loan must be bounded by the floor value of its lock, whatever the allocation of debt across loans (\cref{cr:buffer}). The floor cap of existing designs is therefore not a conservative choice but the only one compatible with proportional release. Lending beyond it needs a committed reserve, and the least such reserve is the largest gap between a sorted debt envelope and the reserve curve. Equal debt ratios minimize it, and the maximum aggregate debt for a given reserve is an explicit infimum, with a closed form for linear prices (\cref{cr:capacity}).
+
+\paragraph{The reserve is what borrowers can take.} Let a coalition hold all the tokens, locked against the loans of a safe book, let there be no fees, and let the reserve $W$ have been funded by others. If the coalition repays down to a residual lock $Q$ with residual debt $B$, redeems what is released and never repays the rest, it gains $B-R(Q)$ over repaying and redeeming everything. The largest such gain is $W_{\min}$, the least reserve that makes the book safe, and at the maximum admitted credit $W_{\min}=W$: the strategy can exhaust the reserve (\cref{cr:extraction}). Payment safety and the interest of whoever funds that safety are different things: a reserve committed to above-floor lending is first-loss capital.
+
+\paragraph{A release rule that needs no reserve.} If a loan is capped by the reserve value $R(\ell)$ of its whole lock and a partial repayment releases collateral along the curve, more credit is safe with no committed reserve and no gain from abandonment (\cref{cr:nonlinearsafety}). The price is paid in withdrawal rights: at the borrowing limit a repayment returns no more than proportional collateral, splitting a position into independent loans loses capacity and in the limit restores the floor cap (\cref{cr:splitting}), and changes of the curve need a stronger guard.
+
+\medskip
+These results build on the floor-cap contract itself, which \cref{sec:model} states as a complete transition system with a three-part invariant and a safety theorem, formalized in Lean~4. \Cref{sec:algo} gives the algorithm for the reserve, a polynomial guard for locks that are released only in full, and an account of what is machine-checked, what is tested and what is proved on paper. \Cref{sec:consequences} compares the three contracts and states the limits of the analysis. An extended version \citep{extended} adds the borrower's incentives under the floor cap, a stationary economy with a participation result, bounds on sandwich and repricing extraction, the implementation in detail, and descriptive evidence from a deployed system.
+
+\paragraph{Related work.} Lending protocols with external collateral mark it to an oracle price and liquidate \citep{bartoletti2021,werner2022sok}; Ajna removes the oracle and keeps liquidation \citep{ajna}. Floor-anchored loans from the issuer's own reserve appear in Nirvana, Baseline and \vone, and the accounting of lent reserves is discussed in audits of deployed code \citep{guardianbaseline}; the mechanism is not new here. \Citet{kirste2025} analyze mint-and-burn market makers and their reserves without a debt side. \Citet{xiazhou2007} read a loan against stock as a perpetual American option that the borrower may exercise by repaying or abandon; the residual loans of \cref{sec:subsidy} are such claims \citep{merton1974}, with the difference that the collateral is a liability of the lender, so that releasing it changes what the lender owes. \Citet{chitra2022borrowing} study loans against market-maker shares under liquidation. The sorted envelope of \cref{sec:credit} is the fractional-knapsack bound \citep{kellerer2004}, equivalently an integrated quantile function \citep{gushchin2017}; what is new is its connection to the states that a repayment contract makes reachable, and the equality between the reserve it yields and the gain from partial repayment.
+
+\input{short/model}
+\input{short/credit}
+\input{short/extraction}
+\input{short/release}
+\input{short/algorithms}
+\input{short/consequences}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\input{short/appendix}
+\end{document}

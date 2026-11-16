@@ -1,0 +1,1 @@
+generated 150 traces, 30000 operations, of which 1048 accepted and 393 refused schedule replacements

@@ -1,0 +1,10 @@
+directed boundary tests    failures=0 
+SPEC                       episodes= 20000 executed_ops=  3051199 failing_episodes=     0  
+SPEC + lift cap            episodes= 20000 executed_ops=  3252132 failing_episodes=     0  
+MUTANT lock rounds down    episodes=  2000 executed_ops=   333928 failing_episodes=  1817  {'J2 loan cover': 1817, 'coverage': 867, 'liquidity refusal (borrow)': 89, 'liquidity refusal (close)': 50, 'liquidity refusal (sell)': 121, 'liquidity refusal (skim)': 43, 'liquidity refusal (topup)': 58}
+MUTANT no floor guard      episodes=  2000 executed_ops=   311460 failing_episodes=  1936  {'J2 loan cover': 417, 'coverage': 37, 'floor decreased': 1936, 'liquidity refusal (sell)': 1, 'liquidity refusal (skim)': 1}
+MUTANT debt cap at spot    episodes=  2000 executed_ops=   305205 failing_episodes=   321  {'J2 loan cover': 321, 'coverage': 198, 'liquidity refusal (borrow)': 3, 'liquidity refusal (close)': 1, 'liquidity refusal (sell)': 17, 'liquidity refusal (skim)': 3, 'liquidity refusal (topup)': 3}
+mint-reshape-redeem lift_cap=False trials=100000 reshape_refused=0 profitable=66589 max_profit=17441
+mint-reshape-redeem lift_cap=True  trials=100000 reshape_refused=59278 profitable=0 max_profit=0
+sandwich profit bound      trials=100000 violations=0
+RESULT: PASS (spec holds; every mutant is caught)

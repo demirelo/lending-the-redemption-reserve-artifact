@@ -1,0 +1,24 @@
+command: python3 -I empirics/rewards.py
+sample: blocks 24915618-26414400; 6645 raw logs
+ABI-decoded: 2233 distributions; 173 reward claims
+checks: each allocation identity, one reserve asset, unique ordered logs, one-to-one source matching, independent source-fee sums: PASS
+amounts below are WETH; raw-unit totals are integers
+pool     records       total    protocol     creator     staking     claimed
+BLT          177    0.513701    0.128425    0.000000    0.385276    0.194836
+B            875   17.616887    4.404222    6.606333    6.606333    1.316833
+ONYX        1004    2.943248    0.735812    1.103721    1.103716    0.344976
+AI            30    0.037302    0.009326    0.027977    0.000000    0.000000
+FLAPPY        29    0.044130    0.011033    0.033098    0.000000    0.000000
+ELEFENT      118    0.281230    0.070307    0.000000    0.210922    0.092658
+TOTAL              21.436499    5.359125    7.771128    8.306247    1.949303
+allocation totals in raw units: {"creatorFee": 7771127602906392701, "protocolFee": 5359124720568661091, "stakingFee": 8306246558799594005, "totalAmount": 21436498882274647797}
+claim total in raw units: 1949302571126026050
+source        records       allocated         staking
+Borrow             49     0.440879996423921547     0.162453575252419312
+Leverage          167     3.988962996474439807     1.504049904127983625
+Swap             1890    17.006635365127459651     6.639735382825880971
+Unassigned        127     0.000020524248826792     0.000007696593310097
+interpretation: allocations are recorded fee destinations; claims are separate events.
+No subtraction of claims from allocations is an estimate of unclaimed earnings. Opening accruals, user histories and reward-accounting semantics are not reconstructed.
+Unassigned distributions retain their measured allocations but receive no inferred source.
+wrote sections/rewardnums.tex

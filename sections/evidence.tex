@@ -1,0 +1,124 @@
+\section{Evidence}\label{sec:evidence}
+
+The results of \cref{sec:model,sec:credit,sec:incentives,sec:equilibrium,sec:extraction} are proved in the text. This section distinguishes a formal proof of the floor-cap safety theorem, randomized tests of its integer reference model, tests of a floor-cap Solidity implementation, and exact finite checks of the new credit-capacity calculations. Each supports a different claim. The saved output of every command is in the supplementary material (\cref{app:repro}).
+
+\subsection{An executable reference model}
+
+The supplementary material contains a reference model of the mechanism on a stepped curve, in about 350 lines of Python (\texttt{scripts/dabc\_model.py}). It uses integers only. Prices are scaled by $10^{18}$, and the reserve function is computed exactly as an integer numerator. The operations are those of \cref{sec:model} other than \op{Transfer}, together with \op{Close} (\cref{prop:netclose}) and \op{Accrue} (\cref{prop:carry}); transfers of free tokens are covered by the Lean development and by the Solidity invariant tests, not by the reference model or the differential traces, and the rounding rules are those of \cref{prop:int}: purchase cost rounded up, the net proceeds of a sale rounded down once, the borrowing guard evaluated as an exact integer inequality, a full repayment releasing the whole lock, the release on partial repayment rounded down, and the reshape guards evaluated exactly. Fees are retained in the reserve. The floor raise is the water-filling of \cref{prop:raise}: lift costs are subtracted from the budget exactly, only the final level is rounded down, unminted capacity priced at or below the new floor is retired, and a raise that would not move the level is refused. When a sale takes the supply below the floor capacity, that capacity is reduced to the supply, and an exhausted floor step is dropped; the last remaining step is never reduced, and a reshape retires nothing. The capacity therefore stays positive and the floor price is always the price of the first unit of the curve. Inputs and configuration values are validated, and an operation whose guard fails leaves the state unchanged.
+
+The model is not the implementation of any deployed system. It is a precise statement of the mechanism, small enough to be read in full, against which an implementation can be tested.
+
+\subsection{Randomized stateful tests}
+
+The test program (\texttt{scripts/test\_model.py}) generates random curves with one to three sloped segments and prices that are not round numbers, an LTV cap between $50\%$ and $100\%$, and random fee rates. Five accounts apply random sequences of buys, sells, loans, top-ups, partial and full repayments, collateral-netted closes, accruals, skims, floor raises, reconfiguration attempts, LTV changes and reserve inflows. After every executed operation the program checks the validity of the state, (J1), (J2), (J3), the coverage inequality \eqref{eq:coverage} for the whole free supply including its slack term, and that the floor did not fall. It also checks that each sale of $x$ token units had an integer curve return of at least $\lfloor\Pf x\rfloor$; that a full repayment released the whole lock; that a floor raise consumed no more than its budget; that every floor raise reached exactly the level given by an independent water-filling computation in rational arithmetic (the smaller of that level and the cap, when the lift cap is on); that no sale, loan, close or skim was refused for lack of reserve; that no close was refused for lack of proceeds when $\gbar+f_s\le1$; and that no floor raise within the surplus was refused for lack of funding. A separate set of directed tests checks boundary cases: complete redemption, reconfiguration at zero supply, minting at the floor after a redemption from the last step and after a full redemption, an integer close under the parameter rule, and $19$ invalid calls and five invalid configurations, each of which must be rejected without any change of state.
+
+\begin{table}[t]
+\centering\small
+\caption{Randomized stateful tests of the reference model. An episode is a sequence of 300 attempted operations; operations whose guard fails are not counted as executed. Command: \texttt{python3 -I scripts/test\_model.py 20000 300}.}\label{tab:tests}
+\begin{tabularx}{\textwidth}{@{}Xrrr@{}}
+\toprule
+Configuration & Episodes & Executed operations & Episodes with a violation\\
+\midrule
+Specified mechanism & \TSpecEp & \TSpecOps & \TSpecFail\\
+Specified mechanism with the lift cap of \cref{prop:jit} & \TCapEp & \TCapOps & \TCapFail\\
+\addlinespace
+Defect: lock rounded down & \TLockEp & \TLockOps & \TLockFail\\
+Defect: reshape without floor guard (G1) & \TFloorEp & \TFloorOps & \TFloorFail\\
+Defect: debt cap at spot price & \TSpotEp & \TSpotOps & \TSpotFail\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\Cref{tab:tests} gives the results. The specified mechanism executes \TTotalOps{} operations in the two configurations without a violation. A test that never fails proves little unless it can fail, so the same program is run on three variants, each with one of the defects discussed in this paper. All three are detected. With the lock rounded down, (J2) fails in \TLockJTwo{} of \TLockEp{} episodes and the coverage inequality in \TLockCov; an operation is refused for lack of reserve in up to \TLockLiqMax{} episodes per operation type. The test curves use small integer amounts, which makes a rounding error of one unit large relative to a position; the purpose is to show that the property is violated, not to estimate a loss. Without the floor guard, the floor falls in \TFloorDec{} episodes, (J2) fails in \TFloorJTwo{} and coverage in \TFloorCov. With the debt cap at the spot price, (J2) fails in \TSpotJTwo{} episodes and coverage in \TSpotCov. The directed examples of \cref{sec:tight} and \cref{ex:reconf} exhibit the last two failures deterministically.
+
+Two further properties are tested on random instances. In \TSandTrials{} sandwich instances the attacker's profit never exceeds $a\,[(1-f_s)\,p_{\mathrm{top}}-(1+f_b)\,p(S)]$, where $p_{\mathrm{top}}$ is the highest minted price after the victim's trade; this bound follows from \eqref{eq:sandwich}, and the test allows no tolerance. In \TRNoTrials{} instances of minting, reshaping with the whole surplus (by a floor raise or by a reconfiguration to a flat schedule) and redeeming, the sequence is profitable \TRNoWins{} times without the lift cap. With the lift cap applied to every reshape, the reshape is refused in \TRCapRefused{} instances and the sequence is profitable in \TRCapWins{}.
+
+These tests are evidence about the model. They are not a proof, they do not cover properties that are not listed above, and they say nothing about any contract. Their value is that the specification is unambiguous and that the failure modes discussed in this paper are demonstrably observable.
+
+\subsection{A machine-checked proof of the safety theorem}\label{sec:lean}
+
+\Cref{thm:safety} is proved in the Lean~4 proof assistant with the Mathlib library \citep{lean4,mathlib} (file \texttt{lean/Safety.lean}, about 460 lines). The formal development states the model over the real numbers for an arbitrary finite set of accounts. The reserve function is abstract: a predicate records the two properties of Lemma~\ref{lem:R} that the proof uses, $R(0)=0$ and $\Pf\,(b-a)\le R(b)-R(a)$ for $0\le a\le b\le C$, and a separate theorem proves that $R(x)=\int_0^x p$ has these properties whenever $p$ is non-decreasing and at least $\Pf$ on $[0,C]$. The operations are an inductive relation with one constructor for each of \op{Buy}, \op{Sell}, \op{Borrow}, full and partial \op{Repay}, \op{SetLTV}, \op{Reshape}, \op{Skim} and \op{Accrue}, each with the guard of \cref{sec:model}. The checked theorems are:
+\begin{itemize}
+\item \texttt{coverage}, \texttt{sell\_payable}: part~(b) of \cref{thm:safety}, with the slack term;
+\item \texttt{borrow\_payable}, \texttt{skim\_payable}: part~(c);
+\item \texttt{inv\_empty}, \texttt{step\_preserves}, \texttt{reach\_inv}: part~(a), for every $\gbar\in(0,1]$, including \cref{prop:carry};
+\item \texttt{reach\_sell\_payable}: on every reachable path every sale by a holder of free tokens can be paid its full curve return.
+\end{itemize}
+Lean checks the file without errors and without unproved assumptions (\texttt{outputs/lean\_run.txt}); the step relation includes the transfer of free tokens, and the formal statements are reproduced in \cref{app:lean}; the theorems depend only on the three standard axioms of Lean's classical logic (\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}).
+
+The formal model is slightly more permissive than \cref{sec:model}, which does not weaken the result: a loan is a pair of non-negative numbers, with $(0,0)$ for ``no loan'', so records with a lock and no debt are allowed; a partial repayment may release any amount within the bound, not the value of one fixed rule; and the bridge theorem takes $p$ on the closed interval $[0,C]$, which a bounded non-decreasing schedule on $[0,C)$ extends to.
+
+What is \emph{not} machine-checked: every result in \cref{sec:credit}, the tightness result, the water-filling and reconfiguration results, the integer refinement, and everything in \cref{sec:incentives,sec:equilibrium,sec:extraction}. The formal model is the real-valued model of \cref{sec:model}; it is not a model of the Solidity code below.
+
+\subsection{A Solidity implementation and its tests}\label{sec:solidity}
+
+The supplementary material contains a Solidity implementation of the mechanism written for this paper (\texttt{contracts/src/FloorCreditIssuer.sol}, about 430 lines). It implements \op{Buy}, \op{Sell}, \op{Borrow}, \op{Repay}, \op{Close}, the floor raise, \op{Reshape}, \op{Skim} and \op{SetLTV} with the rounding rules of the reference model; it has no \op{Accrue}. Its constructor enforces the parameter rule $\gbar+f_s<1$. The floor raise and \op{Reshape} enforce (G1), (G2) and the lift cap of \cref{prop:jit}. The cap is budgeted in time as described in \cref{sec:extraction}: anyone may raise the floor any number of times in an epoch, up to $\kappa$ times the floor at the start of the previous epoch if that epoch had a curve change and of the current epoch otherwise, and the governor may replace the schedule once per epoch, as its first curve change and only if the previous epoch had none. With an epoch length of zero every curve change is its own window, which is the per-operation cap of the reference model and gives no bound over time. A function that adds reserve to the surplus without changing the curve is open to anyone. Capacity is retired in two places: a floor raise retires unminted capacity priced at or below the new floor, and a redemption that takes the supply below the floor capacity retires the difference, which leaves the prices of all minted units unchanged; a \op{Reshape} retires nothing, and redemptions are not subject to the epoch rule. Only the borrower can repay. The contract keeps its own account of the reserve; reserve tokens sent to it outside these operations do not enter that account. It has not been audited and is not offered for deployment.
+
+The supplied Foundry suite (\texttt{forge test}) has three kinds of test:
+\begin{itemize}
+\item \emph{Directed tests} (30, and one fuzz test of the buy--sell round trip): each reproduces an example or boundary case of this paper on the contract, among them the rounding of the borrowing guard, the reshape that would lower the floor (\cref{ex:reconf}), the water-filling of \cref{fig:raise}, minting before a raise, the lift cap at a moved breakpoint of the schedule, one schedule replacement per epoch at the epoch boundary, a small raise followed by a larger one in the same epoch, the shared cap of the raises of one epoch, raises on both sides of an epoch boundary, a replacement followed by a raise across a boundary, the bounds on total capacity and on the largest price, curve changes after a very large contribution of reserve, a borrow request of absurd size, a first raise in the first epoch of the clock, a raise after a redemption of the whole supply in the same epoch, the order of replacement and raise within an epoch, a raise too small to move the level, an unsolicited transfer of reserve, and the integer close under the parameter rule.
+\item \emph{Stateful invariant tests} (8 invariants): four accounts and a governor perform random sequences of the contract's operations, among them token transfers between accounts, inflows of reserve, upward repricing of the last step, attempts to lower the floor, and unsolicited transfers of reserve to the contract. After every call the tests check (J1), (J2), (J3), that the floor has not fallen and that no schedule with a lower floor was accepted, the coverage inequality with slack, that the token balance equals the accounting plus the unsolicited transfers, that the schedule is valid, and that no sale, loan, close or skim was refused. Each invariant is checked over 256 sequences of 150 calls.
+\item \emph{Differential test}: 150 random traces of 200 operations each are generated by the reference model, with the lift cap on, and replayed on a contract with an epoch length of zero. The traces contain buys, sells, loans and top-ups, repayments, closes, floor raises, skims, LTV changes, inflows of reserve and replacements of the schedule (1{,}441 of them, of which 1{,}048 are admissible and 393 must be refused: a repriced step, a changed capacity, an added or split step, a raised or lowered floor, with or without an injection). The epoch rule is not exercised by these traces, because the reference model has no clock; it is covered by the directed tests. After each of the 30{,}000 operations the contract must agree with the model exactly on whether the operation succeeded, on the supply, cash, locked supply, debt, floor price, surplus, capacity and policy LTV, and on the free balance, lock and debt of the account that acted.
+\end{itemize}
+All 189 tests pass (\texttt{outputs/forge\_run.txt}). Each boundary case that the paper discusses has a directed test. The tests added for defects found during development were each run against a contract without the fix and failed there; those runs are the author's and are not part of the saved log. The floor invariant of the stateful tests records a violation in a flag that persists, since a handler that reverted on a bad state would undo the state with it; with the guard (G1) deleted from the contract the campaign fails, in the saved run in five of the eight invariants (\texttt{outputs/forge\_mutant\_run.txt}; the number varies with the random sequences). The accepted schedules are closed under floor raises: the total capacity and every price are bounded by $2^{96}-1$, and a raise stops at that price. There is no explicit cap on the cash, and the two places where it met a product are written without one: the budget of a raise is cut at the largest value that can be scaled, which no raise can spend, and the funding guard compares $\lceil R_{p'}(S)\rceil$ with cash plus debt directly. A borrow request of $2^{160}$ or more is refused before any product is formed. We assume a reserve token whose total supply is below $2^{255}$. The guarantee is for funded and admissible operations: a call with an absurd argument, such as a purchase of $2^{256}-1$ tokens, can still end in an arithmetic revert, which changes nothing.
+
+\Cref{tab:map} relates the objects of \cref{sec:model} to the contract, so that the conformance of this implementation can be checked by reading.
+
+\begin{table}[t]
+\centering\small
+\caption{The model of \cref{sec:model} and its counterpart in \texttt{FloorCreditIssuer.sol}.}\label{tab:map}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Model & Contract & Where enforced or tested\\
+\midrule
+$S$, $A$, $L$, $D$ & \texttt{totalSupply}, \texttt{cash}, \texttt{totalLocked}, \texttt{totalDebt} & compared with the reference model after every replayed operation\\
+schedule $p$, floor $\Pf$ & \texttt{\_steps}, \texttt{floorPrice()} & \texttt{\_validate}; invariant on the schedule\\
+$h_u$; loan $(\ell_i,d_i)$ & \texttt{balanceOf}; \texttt{loans} & (J1) and (J2) invariants\\
+$\gamma\le\gbar$ & \texttt{gammaBps}, immutable \texttt{gammaCapBps} & \texttt{setGamma}; constructor requires $\gbar+f_s<1$\\
+\op{Buy}, \op{Sell} & \texttt{buy}, \texttt{sell} & cost rounded up, proceeds rounded down once\\
+\op{Borrow} with guard \eqref{eq:ltv} & \texttt{borrow}, error \texttt{LtvExceeded} & exact integer inequality after the update\\
+\op{Repay}, close from collateral & \texttt{repay}, \texttt{close} & full repayment releases the whole lock; \texttt{CloseNotCovered} never raised in the invariant tests\\
+floor raise (\cref{sec:raise}) & \texttt{raiseFloor} & water-filling test; epoch budget tests\\
+\op{Reshape}, (G1), (G2) & \texttt{reshape}, \texttt{\_install}; errors \texttt{FloorDecrease}, \texttt{Underfunded} & directed tests; floor invariant, shown to fail without (G1)\\
+lift cap (\cref{prop:jit}) & \texttt{\_checkLiftCap}, \texttt{kappaLimit}, \texttt{\_enterEpoch} & breakpoint test; replayed replacements\\
+\op{Skim} & \texttt{skim}, bounded by \texttt{surplus()} & refusal counter in the invariant tests\\
+(J3) & \texttt{cash + totalDebt} against \texttt{reserveNum(totalSupply)} & (J3) invariant; token balance equals \texttt{cash} plus unsolicited transfers\\
+\bottomrule
+\end{tabularx}
+\end{table} The differential test found errors of its own: its first run exposed two discrepancies, both in the handling of floor capacity (a reshape at zero supply dropped the untouched floor step, and a floor raise too small to move the level still retired capacity in the model). Both were corrected in the contract and the model, and each has a directed regression test. The contract is tested, not verified: there is no machine-checked proof of the Solidity code.
+
+\subsection{Exact finite checks of credit capacity}\label{sec:credit-checks}
+
+The separate script \texttt{scripts/credit\_frontier.py} uses exact rational arithmetic for the calculations in \cref{sec:credit}; its saved run is \texttt{outputs/credit\_frontier\_run.txt}. The sorted-envelope algorithm agrees with independent exhaustive enumeration on 240 small books over five curves and 160{,}640 rational residual states. The fixtures put every possible interval maximum on the enumeration grid, so these are exact comparisons for the specified instances. Twenty-four capacity-boundary cases are feasible, and increasing the debt by $1/100$ violates the buffer in each. The script also executes 144 nonlinear-release paths and 328 atomic collateral-funded closes without a cash shortfall, and compares 125 whole-position books and 2{,}696 subsets with both a dynamic program and an independent subset-sum calculation.
+
+Four directed mutations are detected by actual cash shortfalls: testing only current aggregate coverage, replacing the sorted envelope by an average-ratio proxy, skimming committed reserve, and using the original reshape guards after adopting a curve-valued loan cap. \Cref{cr:checks} explains the fixtures and the narrowly isolated use of floating-point arithmetic for a displayed irrational number. These calculations do not formally verify the new theorems, and none of the alternative loan contracts is implemented in the floor-cap Solidity code.
+
+\subsection{Conformance requirements for an implementation}\label{sec:conformance}
+
+\Cref{thm:safety} applies to an implementation only if the implementation is an instance of the model. The following lists state hypotheses of the results above; they are sufficient conditions, grouped by the result they support, and are not claimed to be a complete audit checklist.
+
+\paragraph{For safety (\cref{thm:safety}, \cref{prop:int}).}
+\begin{enumerate}[label=C\arabic*.,leftmargin=2.4em]
+\item \textbf{Custody.} Locked tokens are held by the facility and cannot be sold, transferred or redeemed while locked.
+\item \textbf{Immutable LTV cap.} The policy LTV can never be set above an immutable $\gbar\le1$. A cap of $100\%$ leaves no margin; it is safe only if every rounding is conservative.
+\item \textbf{Rounding.} The borrowing guard holds as an exact inequality after every borrow and top-up (a required lock is rounded up); a full repayment releases the whole lock; purchase costs are rounded up and sale returns down.
+\item \textbf{No debt growth without a guard.} Any accrual is capped as in \cref{prop:carry}.
+\item \textbf{Floor guard.} Every function that can change the curve enforces $\Pf'\ge\Pf$.
+\item \textbf{Funding guard.} Every such function enforces $R_{p'}(S)\le$ cash $+$ debt, with cash measured as the actual balance attributable to the mechanism.
+\item \textbf{No other writer.} No privileged function changes the reserve accounting, the debts or the locks outside the operations of \cref{sec:model}.
+\item \textbf{Reserve accounting.} The reserve token has no transfer fee and does not rebase, and the cash $A$ is an account kept by the mechanism that never exceeds its actual token balance. (The balance can exceed $A$, since anyone can send tokens to a contract.)
+\end{enumerate}
+
+\paragraph{For the incentive results (\cref{sec:incentives}).} These results also assume (A1) and (A4), which concern the agent and not the implementation.
+\begin{enumerate}[label=C\arabic*.,leftmargin=2.4em,resume]
+\item \textbf{Parameter rule.} $\gbar+\fsbar<1$ for an immutable cap $\fsbar$ on the sell fee of every redemption, with net proceeds rounded once. In integer settlement the rule guarantees that a close is covered by its proceeds, with a residual that may be zero, and a strict comparison of cash amounts can become an equality. An implementation that needs a strictly positive residual must require $\lfloor(1-f_s)[R(S)-R(S-\ell)]\rfloor\ge d+1$.
+\item \textbf{Assumptions (A2)--(A3).} No interest and no maturity; locked tokens earn nothing; the release rule on partial repayment depends only on the loan and the repayment. Where locked tokens earn at least as much as free ones, \cref{prop:general} applies in place of the basic results; other reward structures need a new derivation.
+\end{enumerate}
+
+\paragraph{Against the extraction strategies (\cref{sec:extraction}).} One condition is proved sufficient; the others are mitigations with a narrower effect.
+\begin{enumerate}[label=C\arabic*.,leftmargin=2.4em,resume]
+\item \textbf{Bounded repricing (proved, \cref{prop:jit}(a)).} No single operation reprices a minted unit upward by more than the factor $\kappa$, on every entry point that can change the curve. This excludes a profitable mint--reshape--redeem around one reshape. Where anyone can trigger a repricing, the bound over time is a budget per epoch and not a waiting period per call, so that a negligible repricing cannot block a larger one.
+\item \textbf{Mitigations.} Applying fees to the floor in the transaction that pays them removes the accumulated budget. A minimum output and, where fees depend on state, a maximum fee in buy, sell and borrow transactions bound the execution a user accepts; they do not by themselves exclude a sandwich. An order is protected from sandwiching on a uniform geometric curve if it satisfies $(1+\beta)^{\lceil w/q\rceil}\le\kappa$ (\cref{sec:sandwich}).
+\end{enumerate}
+
+\paragraph{Relation to the earlier verification.} \Citet{dabc2026} report rule-level checks of the arithmetic libraries with the Certora Prover and Halmos, and invariant fuzzing of an implementation. The Lean proof of \cref{sec:lean} adds the invariant $\J$ over the full operation set of the abstract model. A proof for a production state machine remains to be done, and \cref{sec:conformance} lists what it has to establish.

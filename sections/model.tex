@@ -1,0 +1,323 @@
+\section{Model and Safety}\label{sec:model}
+
+Reserve amounts are in units of one reserve asset, token amounts in token units, and prices in reserve units per token. All amounts are real numbers in this section; \cref{sec:integer} treats integer arithmetic. \Cref{tab:notation} collects the notation.
+
+\begin{table}[t]
+\centering\small
+\caption{Notation.}\label{tab:notation}
+\begin{tabular}{@{}ll@{\qquad}ll@{}}
+\toprule
+$p$, $C$ & price schedule and its capacity & $A$ & reserve cash held by the issuer\\
+$R(x)$ & reserve function, $\int_0^x p$ & $W$ & surplus, $A+D-R(S)$\\
+$\Pf$, $S_0$ & floor price $p(0)$, floor capacity & $\gamma$, $\gbar$ & LTV policy and its immutable cap\\
+$S$ & token supply & $f_b$, $f_s$, $\fsbar$ & buy fee, sell fee, sell-fee cap\\
+$h_u$ & free balance of account $u$ & $\phi$ & origination fee\\
+$(\ell_i,d_i)$ & locked tokens and debt of loan $i$ & $\kappa$ & round-trip fee factor $(1+f_b)/(1-f_s)$\\
+$L$, $D$ & locked supply, total debt & $\rho$ & outside rate of return\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Price schedules and the reserve function}
+
+\begin{definition}[Price schedule]\label{def:schedule}
+A \emph{price schedule} with capacity $C\in(0,\infty)$ is a bounded, non-decreasing, right-continuous function $p:[0,C)\to(0,\infty)$. Its \emph{reserve function} is $R_p(x)=\int_0^x p(u)\,du$ for $0\le x\le C$, its \emph{floor price} is $\Pf=p(0)$, and its \emph{floor capacity} is $S_0=\sup\{x\in[0,C): p(x)=\Pf\}$.
+\end{definition}
+
+We write $R$ for $R_p$ when the schedule is clear. The issuer mints the token at position $x$ at price $p(x)$ and burns tokens from the top of the supply: taking the supply from $S$ to $S+x$ has \emph{curve cost} $R(S+x)-R(S)$, and taking it from $S$ to $S-x$ has \emph{curve return} $R(S)-R(S-x)$. Stepped, piecewise-linear and smooth curves are all instances. The discrete curves of \vone{} are step functions with $S_0>0$; a smooth increasing curve has $S_0=0$. A schedule without a finite capacity is covered by restricting it to supplies below any finite bound.
+
+\begin{lemma}\label{lem:R}
+For $0\le a<b\le C$: $p(a)\,(b-a)\le R(b)-R(a)\le p(b^-)\,(b-a)$, where $p(b^-)$ is the left limit. Consequently $R$ is increasing and convex; $R(b)-R(a)\ge \Pf\,(b-a)$ for $a\le b$; $R(x)\le \tfrac{x}{b}R(b)$ for $0\le x\le b$ with $b>0$; and $R(x)/x\to\Pf$ as $x\downarrow0$.
+\end{lemma}
+\begin{proof}
+The two bounds hold because $p$ is non-decreasing. $R$ is the integral of a non-decreasing function and is therefore convex; the chord bound is convexity with $R(0)=0$. The limit holds because $p$ is right-continuous at $0$.
+\end{proof}
+
+\subsection{State and operations}
+
+A \emph{state} consists of a schedule $p$, the supply $S\in[0,C]$, the reserve cash $A\ge 0$, the LTV policy $\gamma$, a free balance $h_u\ge0$ for each account $u$, and a set of loans. A loan $i$ is a record $(\ell_i,d_i)$ with $\ell_i>0$ tokens locked in the issuer's custody and debt $d_i>0$; an account without a record has no loan. We write $L=\sum_i\ell_i$ and $D=\sum_i d_i$. One constant is fixed at deployment and cannot be changed: the \emph{LTV cap} $\gbar\in(0,1]$. A state is \emph{valid} if these domain conditions hold and $0<\gamma\le\gbar$.
+
+An operation whose guard fails does nothing. Fees are deliberately left open: a fee may be retained in the reserve or paid to a third party. The operations are stated in terms of what enters and what leaves the reserve in total, so the statements below hold in both cases: an amount paid by a user to a third party never enters $A$, and an amount paid out of the reserve to a third party counts as part of the outflow.
+
+\begin{description}[leftmargin=1.2em,itemsep=3pt]
+\item[\op{Buy}$(u,x)$.] Guard: $x>0$, $S+x\le C$. An amount $c\ge R(S+x)-R(S)$ enters the reserve. Effect: $S\gets S+x$, $h_u\gets h_u+x$, $A\gets A+c$.
+\item[\op{Sell}$(u,x)$.] Guard: $0<x\le h_u$. An amount $o$ with $0\le o\le R(S)-R(S-x)$ leaves the reserve: the seller's receipt plus any fee paid out to a third party. Effect: $S\gets S-x$, $h_u\gets h_u-x$, $A\gets A-o$.
+\item[\op{Borrow}$(i,\ell^+,b)$.] Guard: $0\le \ell^+\le h_i$, $b>0$, and
+\begin{equation}\label{eq:ltv}
+d_i+b\;\le\;\gamma\,\Pf\,(\ell_i+\ell^+),
+\end{equation}
+where $(\ell_i,d_i)=(0,0)$ if $i$ has no loan. An amount $o$ with $0\le o\le b$ leaves the reserve: the borrower's receipt plus any fee paid out to a third party. Effect: $h_i\gets h_i-\ell^+$, $\ell_i\gets \ell_i+\ell^+$, $d_i\gets d_i+b$, $A\gets A-o$. This one operation covers origination, a top-up of debt against an existing lock ($\ell^+=0$), and an added lock. By \eqref{eq:ltv} the resulting record has $\ell_i>0$.
+\item[\op{Repay}$(i,r)$.] Guard: $i$ has a loan and $0<r\le d_i$. Effect: $A\gets A+r$. If $r=d_i$, all $\ell_i$ tokens are released, $h_i\gets h_i+\ell_i$, and the record is deleted. If $r<d_i$, then $d_i\gets d_i-r$ and $u$ tokens are released, $\ell_i\gets\ell_i-u$, $h_i\gets h_i+u$, where $u=\upsilon(\ell_i,d_i,r)$ for a fixed release rule $\upsilon$ that depends only on the loan and the repayment and satisfies $0\le\upsilon(\ell,d,r)\le \ell\,r/d$. The proportional rule $\upsilon=\ell r/d$ is the natural choice.
+\item[\op{Transfer}$(u,v,x)$.] Guard: $0<x\le h_u$, $v\ne u$. Effect: $h_u\gets h_u-x$, $h_v\gets h_v+x$. Only free tokens can be transferred; a lock is not transferable. A transfer to oneself changes nothing and is not an operation.
+\item[\op{SetLTV}$(\gamma')$.] Guard: $0<\gamma'\le\gbar$. Effect: $\gamma\gets\gamma'$.
+\item[\op{Reshape}$(p',c)$.] The schedule is replaced by a schedule $p'$ of capacity at least $S$, and $c\ge0$ of new reserve is paid in. Guards:
+\begin{align}
+&\text{(G1) floor guard:} && p'(0)\ \ge\ p(0), \label{eq:G1}\\
+&\text{(G2) funding guard:} && R_{p'}(S)\ \le\ A+c+D. \label{eq:G2}
+\end{align}
+Effect: $p\gets p'$, $A\gets A+c$. Raising the floor (\cref{sec:raise}) and every other change of the curve are instances. A pure inflow of reserve is the case $p'=p$.
+\item[\op{Skim}$(w)$.] Guard: $0<w\le A+D-R(S)$. Effect: $A\gets A-w$. This models retained fees leaving the issuer, for example to a treasury.
+\end{description}
+
+Locked tokens cannot be sold or transferred, because \op{Sell} is guarded by the free balance and custody is exclusive. A loan may be reassigned to another owner; this changes no quantity below. Two kinds of operation are deliberately absent: none increases a debt without the borrower's action (interest is treated in \cref{sec:carry}), and none releases or removes locked tokens other than the borrower's own \op{Repay}.
+
+\subsection{The invariant}
+
+\begin{definition}[Safety invariant]\label{def:J}
+A valid state satisfies $\J$ if
+\begin{align}
+&\text{(J1) custody:} && \textstyle\sum_u h_u+L=S; \\
+&\text{(J2) loan cover:} && d_i\ \le\ \gbar\,\Pf\,\ell_i\quad\text{for every loan } i;\label{eq:J2}\\
+&\text{(J3) reserve adequacy:} && A+D\ \ge\ R(S).\label{eq:J3}
+\end{align}
+\end{definition}
+
+The quantity $W=A+D-R(S)\ge 0$ is the \emph{surplus}: reserve that backs no curve obligation, such as retained fees not yet used. \Cref{fig:sheet} shows the balance sheet.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm,font=\small]
+\node[anchor=east] at (-0.2,2.35) {supply $S$};
+\draw[fill=red!18] (0,2) rectangle (3.2,2.7); \node at (1.6,2.35) {locked $L$};
+\draw[fill=green!18] (3.2,2) rectangle (9,2.7); \node at (6.1,2.35) {free $S-L$};
+\node[anchor=east] at (-0.2,0.35) {curve reserve $R(S)$};
+\draw[fill=red!18] (0,0) rectangle (3.2,0.7);
+\draw[fill=orange!35] (0,0) rectangle (2.3,0.7); \node at (1.15,0.35) {debt $D$};
+\draw[pattern=north east lines,pattern color=black!40] (2.3,0) rectangle (3.2,0.7);
+\draw[fill=blue!14] (3.2,0) rectangle (9,0.7); \node at (6.1,0.35) {$R(S)-R(L)$: due to free supply};
+\draw[decorate,decoration={brace,mirror,amplitude=5pt}] (0,-0.15) -- (3.2,-0.15) node[midway,below=6pt] {$R(L)\ge \Pf L$};
+\draw[decorate,decoration={brace,mirror,amplitude=5pt}] (2.3,-1.25) -- (9,-1.25) node[midway,below=6pt] {cash $A\ \ge\ R(S)-D$};
+\draw[thin,dotted] (2.3,0) -- (2.3,-1.25); \draw[thin,dotted] (9,0) -- (9,-1.25);
+\draw[->,thin] (2.75,1.25) node[above,align=center] {slack $\ge(1-\gbar)\,R(L)$} -- (2.75,0.72);
+\end{tikzpicture}
+\caption{The balance sheet under $\J$. Debt is at most $\gbar\Pf L\le\gbar R(L)$, a fraction of the reserve of the lowest $L$ units of the curve, so the cash that remains covers the curve return of the entire free supply with slack $(1-\gbar)R(L)$.}\label{fig:sheet}
+\end{figure}
+
+\begin{theorem}[Safety]\label{thm:safety}
+\begin{enumerate}[label=(\alph*)]
+\item The empty state ($S=A=0$, no balances, no loans, $0<\gamma\le\gbar$) is valid and satisfies $\J$, and every operation whose guard holds maps a valid $\J$-state to a valid $\J$-state.
+\item In every valid $\J$-state, for every $x$ with $0\le x\le S-L$,
+\begin{equation}\label{eq:coverage}
+A\ \ge\ \bigl[R(S)-R(S-x)\bigr]+(1-\gbar)\,R(L).
+\end{equation}
+Hence every \op{Sell} whose guard holds can be paid its full curve return.
+\item In every valid $\J$-state, every \op{Borrow} whose guard holds satisfies $b\le A-(1-\gbar)R(S)$, and every \op{Skim} whose guard holds satisfies $w\le A$. Hence both can be paid in full.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(b) By (J3), (J2) summed over loans, and \cref{lem:R},
+\[
+A\ \ge\ R(S)-D\ \ge\ R(S)-\gbar\,\Pf L\ \ge\ R(S)-\gbar\,R(L)\ =\ \bigl[R(S)-R(L)\bigr]+(1-\gbar)R(L).
+\]
+Since $S-x\ge L$ and $R$ is increasing, $R(S)-R(L)\ge R(S)-R(S-x)$.
+
+(c) After a \op{Borrow} whose guard holds, loan $i$ satisfies $d_i\le\gamma\Pf\ell_i\le\gbar\Pf\ell_i$ and the other loans are unchanged, so the new totals satisfy $D+b\le\gbar\Pf L'\le\gbar R(L')\le\gbar R(S)$, where $L'=L+\ell^+\le S$ by (J1). With (J3), $A-b\ge R(S)-(D+b)\ge(1-\gbar)R(S)\ge0$. For \op{Skim}, $w\le A+D-R(S)\le A$ because $D\le\gbar R(S)\le R(S)$.
+
+(a) The empty state is valid and satisfies $\J$ trivially. We check each operation, writing primes for the new state. In each case validity is immediate from the guard and from (b) and (c), which show $A'\ge0$.
+
+\op{Transfer} changes two free balances by opposite amounts and nothing else. \op{Buy}: (J1) is immediate, (J2) is untouched because $p$ and the loans are unchanged, and $A'+D\ge A+D+R(S+x)-R(S)\ge R(S+x)$.
+
+\op{Sell}: (J1) holds by the guard $x\le h_u$. $A'+D=A-o+D\ge R(S)-[R(S)-R(S-x)]=R(S-x)$.
+
+\op{Borrow}: (J1) holds by the guard $\ell^+\le h_i$. (J2) holds for loan $i$ by \eqref{eq:ltv} and $\gamma\le\gbar$. $A$ falls by at most $b$ and $D$ rises by exactly $b$, so $A'+D'\ge A+D$.
+
+\op{Repay}: $A'+D'=A+D$, and (J1) holds because released tokens move from the lock to the free balance. If $r=d_i$ the record is deleted. Otherwise $d_i'=d_i-r>0$ and $\ell_i'=\ell_i-u\ge \ell_i(1-r/d_i)=\ell_i\,d_i'/d_i>0$, so $d_i'\le (d_i/\ell_i)\,\ell_i'\le\gbar\Pf\ell_i'$.
+
+\op{SetLTV}: only $\gamma$ changes, and it stays in $(0,\gbar]$.
+
+\op{Reshape}: (J1) is untouched. (J2) is preserved because debts and locks are unchanged and $\Pf'\ge\Pf$ by (G1). (J3) is (G2).
+
+\op{Skim}: $A'+D=A+D-w\ge R(S)$ by the guard.
+\end{proof}
+
+Two remarks on the scope of the theorem. First, the proof uses the schedule only through $R(0)=0$ and the bound $R(b)-R(a)\ge\Pf\,(b-a)$ of \cref{lem:R}, that is, through $p\ge\Pf$. Monotonicity of $p$ is not needed for safety, and the formal statement in \cref{app:lean} assumes only that bound. Monotonicity is what makes $\Pf=p(0)$ the lowest price and $R$ convex, and it is used from \cref{sec:tight} on. Second, the operation set is closed in the following sense: the state changes only through the operations listed above, each of which is covered by part~(a), and an implementation is an instance of the model only if it has no other way to change the state (\cref{sec:conformance}, C7). An implementation may also change the representation of the schedule inside an operation, as the reference model does when a sale retires unminted capacity at the floor (\cref{sec:integer}). Such a change leaves $p$ unchanged on $[0,S)$ and is a \op{Reshape} with $c=0$ that satisfies (G1) and (G2) with equality in $R$, so it is covered.
+
+The proof uses no property of the fee policy, no assumption that any loan is ever repaid, and no property of the schedule beyond monotonicity. The following consequences are stated for \emph{gross} amounts, that is curve returns before any sell fee; \cref{sec:net} treats net amounts.
+
+\begin{corollary}[Redemption at the curve price]\label{cor:redeem}
+From any reachable state, any sequence of \op{Sell} operations by holders of free tokens can be executed, each with its full curve return available. The curve return of $x$ tokens is $R(S)-R(S-x)\ge\Pf x$.
+\end{corollary}
+
+\begin{corollary}[Exit order]\label{cor:run}
+Let free holders redeem $x_1,\dots,x_n>0$ tokens in this order with no other operation in between, and let $x=\sum_k x_k\le S-L$. The curve returns sum to $R(S)-R(S-x)$, independently of the order and of how $x$ is split. The curve return per token is non-increasing in the order of redemption, is at least $\Pf$ for every redeemer, and differs between any two redeemers by at most $p(S^-)-\Pf$.
+\end{corollary}
+\begin{proof}
+The $k$-th redeemer's curve return is $R(S_k)-R(S_k-x_k)$ with $S_k=S-\sum_{j<k}x_j$; the sum telescopes. Monotonicity and the bounds follow from \cref{lem:R}.
+\end{proof}
+
+The comparison with the demand-deposit model of \citet{diamond1983} is an analogy, but an instructive one. There, a depositor who arrives after the liquid asset is exhausted receives nothing, and this is what makes a run self-fulfilling. Here the last free token has a curve return of at least $\Pf$ whatever the others do, so a belief that others will redeem cannot make redemption at the floor fail. A first-mover advantage remains for the part of the price above the floor: early redeemers are paid from higher parts of the curve. It is bounded by the premium $p(S^-)-\Pf$ and is a property of every bonding curve, with or without credit.
+
+\begin{corollary}[Non-rivalrous credit]\label{cor:nonrival}
+Whether a borrower can borrow $b$ depends only on that borrower's own position and on $(\gamma,\Pf)$, through \eqref{eq:ltv}. It does not depend on other loans, on utilization, or on $A$.
+\end{corollary}
+
+\begin{definition}[Liquidation-free]\label{def:liqfree}
+A credit facility is \emph{liquidation-free} if (i) no operation other than the borrower's own repayment releases or removes a loan's locked tokens, and (ii) every payment the issuer owes under its operations can be made on every path, including paths on which no loan is ever repaid.
+\end{definition}
+
+\begin{corollary}\label{cor:liqfree}
+The mechanism of this section is liquidation-free. In every reachable state a borrower recovers all $\ell_i$ locked tokens by paying $d_i\le\gbar\Pf\ell_i$, which is strictly less than their floor value when $\gbar<1$.
+\end{corollary}
+
+The price of this property is borne by the borrower who never repays: the tokens stay locked for ever, and the borrower forgoes their residual value. \Cref{sec:incentives} examines when that is a rational choice.
+
+\begin{remark}[The case $\gbar=1$]\label{rem:gbar1}
+\Cref{thm:safety} includes $\gbar=1$: coverage then holds with zero slack. A cap strictly below one is needed for three further things: a positive margin against any rounding that is not conservative (\cref{sec:integer}), a positive residual value for every borrower, and the incentive results of \cref{sec:incentives} in their basic form (\cref{sec:general} treats $\gbar=1$).
+\end{remark}
+
+\begin{remark}[Floor monotonicity]\label{rem:mono}
+The floor price changes only through \op{Reshape}, so by (G1) it never falls. In this model that is a guard, not a theorem. Removing the guard admits unsafe reshapes (\cref{ex:reconf}). The guard is not the weakest condition that preserves $\J$: a funded reshape that lowers the floor while keeping $d_i\le\gbar\Pf'\ell_i$ for every loan would also do so. (G1) is the form of that condition that does not depend on the loan book.
+\end{remark}
+
+\begin{remark}[Policy LTV and persistent safety]\label{rem:gamma}
+(J2) is stated with the constant cap $\gbar$, not with the current policy $\gamma$. A loan originated at $\gamma=0.9$ still satisfies (J2) after the policy is lowered to $0.8$, but it no longer satisfies $d_i\le\gamma\Pf\ell_i$. The persistent inequality is the one with $\gbar$. \Citet{dabc2026} state the loan bound with the current $\gamma$; when $\gamma$ can be lowered, the form with $\gbar$ is the one that persists.
+\end{remark}
+
+\subsection{Tightness of the floor anchor}\label{sec:tight}
+
+\begin{lemma}[Exact coverage condition]\label{lem:exact}
+In a valid state with (J1) and no surplus, $A+D=R(S)$, the curve return of the whole free supply can be paid if and only if $D\le R(L)$.
+\end{lemma}
+\begin{proof}
+The curve return of the free supply is $R(S)-R(L)$, and $A=R(S)-D$.
+\end{proof}
+
+So what coverage requires is an \emph{aggregate} bound: total debt must not exceed the reserve of the lowest $L$ units of the curve. Rule (J2) enforces it loan by loan through $\Pf\ell_i$, a quantity that depends on nothing but the loan itself. No larger uniform per-token cap works.
+
+\begin{proposition}[Tightness]\label{prop:tight}
+Fix any schedule and any number $\lambda>\Pf$. Replace the guard \eqref{eq:ltv} by $d_i+b\le\lambda\,(\ell_i+\ell^+)$. Then there is a reachable state, satisfying (J1) and (J3), in which the curve return of a free holder's \op{Sell} exceeds the cash $A$.
+\end{proposition}
+\begin{proof}
+Charge no fees. By \cref{lem:R} there is an $\ell>0$ with $R(\ell)<\lambda\ell$; choose it small enough that $\ell+y\le C$ for $y=(\lambda/\Pf-1)\,\ell$. From the empty state let account~1 buy $\ell$ tokens and then account~2 buy $y$ tokens, each at the curve cost. Then $A=R(\ell+y)\ge\Pf(\ell+y)=\lambda\ell$. Account~1 locks $\ell$ and borrows $\lambda\ell$, which is available. Now $A=R(\ell+y)-\lambda\ell<R(\ell+y)-R(\ell)$, which is the curve return of account~2's $y$ tokens.
+\end{proof}
+
+A cap at the spot price, $\lambda=\gamma\,p(S)$, is the case of an oracle-free loan valued ``at market''; it fails as soon as $\gamma\,p(S)>\Pf$.\footnote{With $\Pf=1$, a spot price of $2$ and $\gamma=0.9$, one borrower locks $100$ floor-priced tokens and borrows $180$; cash is $120$ against a curve return of $200$ for the free supply. Script block N08.}
+
+\begin{remark}[Rules that are not uniform]
+The proposition concerns caps that are a fixed amount per locked token. One could instead admit loans as long as $D\le R(L)$, which lends against the premium when $L>S_0$. That rule is rivalrous, since one loan consumes capacity that another could have used, and it is not closed under repayment: when borrower $j$ repays $d_j$ and unlocks $\ell_j$, the bound falls by $R(L)-R(L-\ell_j)$, which can exceed $d_j$, so the remaining loans can violate the rule through no action of their own.
+\end{remark}
+
+\subsection{Raising the floor}\label{sec:raise}
+
+\begin{definition}[Lift]
+For a schedule $p$, supply $S>0$ and level $y\ge\Pf$, the \emph{lift cost} is
+\[
+K(y)=\int_0^S\pos{y-p(u)}\,du .
+\]
+\end{definition}
+
+$K(y)$ is the reserve needed to raise every minted unit priced below $y$ up to $y$. It is continuous and convex with $K(\Pf)=0$, and its one-sided derivatives are the amounts of minted supply priced strictly below, and at or below, the level:
+\[
+K'_-(y)=\bigl|\{u<S:\,p(u)<y\}\bigr|,\qquad K'_+(y)=\bigl|\{u<S:\,p(u)\le y\}\bigr| .
+\]
+Because $p$ is right-continuous at $0$, the set $\{u<S: p(u)<y\}$ has positive measure for every $y>\Pf$, so $K$ is strictly increasing on $[\Pf,\infty)$, and it is unbounded. Hence for every budget $c>0$ there is exactly one level $y^\ast>\Pf$ with $K(y^\ast)=c$.
+
+\begin{proposition}[Floor raise by water-filling]\label{prop:raise}
+Let a valid $\J$-state have $S>0$ and surplus $W$, and let $0<c\le W$. Let $y^\ast$ be the level with $K(y^\ast)=c$, and let $p'$ be any schedule of capacity at least $S$ with $p'(u)=\max\{p(u),y^\ast\}$ for $u<S$. Then \op{Reshape}$(p',0)$ satisfies (G1) and (G2), the new floor is $y^\ast$, and the surplus falls by exactly $c$.
+\end{proposition}
+\begin{proof}
+$p'(0)=y^\ast\ge\Pf$ gives (G1). $R_{p'}(S)=R_p(S)+K(y^\ast)=R_p(S)+c\le R_p(S)+W=A+D$ gives (G2).
+\end{proof}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.78\textwidth,height=5.6cm,xlabel={supply},ylabel={price},
+  xmin=0,xmax=12000,ymin=0,ymax=2.9,legend pos=north west,legend cell align=left,
+  scaled x ticks=false,xtick={0,4000,5000,7500,12000},xticklabels={0,4000,5000,$S{=}7500$,12000},
+  tick label style={font=\footnotesize},label style={font=\small},legend style={font=\footnotesize}]
+\addplot[const plot,thick,black!55,dashed] table[x=s,y=p] {figures/curve_before.dat};
+\addlegendentry{before}
+\addplot[const plot,very thick,blue!70!black] table[x=s,y=p] {figures/curve_after.dat};
+\addlegendentry{after raise}
+\draw[thin,dotted] (axis cs:7500,0) -- (axis cs:7500,2.9);
+\fill[blue!25,opacity=0.5] (axis cs:0,1) rectangle (axis cs:4000,1.34);
+\fill[blue!25,opacity=0.5] (axis cs:4000,1.2) rectangle (axis cs:5000,1.34);
+\node[font=\footnotesize,anchor=west] at (axis cs:300,1.55) {$c=1500$ fills to $y^\ast=1.34$};
+\end{axis}
+\end{tikzpicture}
+\caption{A floor raise is water-filling of the minted part of the curve. Floor $1.00$ on $4000$ tokens, steps of $1000$ tokens at $1.2,1.4,\dots$, supply $7500$. A budget of $1500$ lifts the floor to $1.34$: $800$ to reach $1.2$ over $4000$ tokens, then $700$ over $5000$ tokens. Script block N10.}\label{fig:raise}
+\end{figure}
+
+For a stepped curve, $y^\ast$ is found by absorbing steps from the bottom until the budget is exhausted, which is the step-absorption algorithm of \vone; \cref{fig:raise} shows an example. The two ``modes'' of that algorithm are the two regimes of the slope of $K$: below the marginal price $p(S^-)$ the level rises against the minted supply underneath it, and above $p(S^-)$ it rises against the whole supply $S$. The proposition leaves the unminted part of the schedule free. Retiring unminted capacity priced at or below the new floor, as the earlier paper does, means that immediately after the raise no token can be minted at the floor price. A later redemption can make minting at the current floor possible again. In the reference model this occurs when a redemption reopens capacity on the last remaining step of a curve, which is never retired, or when a full redemption removes the exhausted floor step and exposes the next step as the new floor.
+
+Three properties of the lift cost drive the economics. First, the cost of a marginal raise is the minted supply at or below the level, \emph{including locked tokens}: loans that stay open make every later raise more expensive. Second, redemptions at the floor reduce that supply, so a contraction makes later raises cheaper per unit of budget. Third, a raise increases every borrower's limit \eqref{eq:ltv} by $\gamma\,(y^\ast-\Pf)\,\ell_i$ without any action by the borrower, while the debt is unchanged.
+
+\subsection{Reconfiguration: safety is not fairness}\label{sec:reconf}
+
+By \cref{thm:safety}, the guards (G1) and (G2) are sufficient for the safety of any change to the curve. Dropping either one admits unsafe changes; for (G2) this is obvious, and for (G1) an example follows.
+
+\begin{example}[A reshape without the floor guard]\label{ex:reconf}
+Take two one-token steps priced $10$ and $30$, so $R(2)=40$, no fees, and $\gamma=\gbar=0.9$. One token is locked against a debt of $9$; cash is $31$. Reconfigure the prices to $8$ and $32$. The reserve is unchanged, $R'(2)=40$, and no price falls by more than $2$, so reserve equality, a bounded price loss and a cumulative budget, the conditions listed in Definition~3.5 of \vone, can all hold. But the floor is now $8<9$, so the loan exceeds the floor value of its collateral, and the free token's curve return is $32$ against cash of $31$. With (G1), which the earlier paper assumes as a precondition, the reconfiguration is rejected. Script block N06.
+\end{example}
+
+Safety says nothing about who gains and who loses. Tokens are fungible and are not attached to positions on the curve, so the natural object is the payoff of a set of holders who exit together.
+
+\begin{definition}[Exit payoff]
+In a state with supply $S$ and locked supply $L$, the \emph{exit payoff} of a coalition of free holders that redeems $x\le S-L$ tokens is its curve return $G(x)=R(S)-R(S-x)$.
+\end{definition}
+
+A reshape $p\to p'$ at fixed supply changes the exit payoff of the coalition of size $x$ by
+\[
+G'(x)-G(x)=\bigl[R_{p'}(S)-R_p(S)\bigr]-\bigl[R_{p'}(S-x)-R_p(S-x)\bigr].
+\]
+Call a reshape \emph{reserve-neutral} if $R_{p'}(S)=R_p(S)$: it uses no surplus and no new funding. A reserve-neutral reshape harms some currently feasible exit if and only if $R_{p'}(z)>R_p(z)$ for some depth $z\in[L,S]$, and we define its \emph{exit distortion} as
+\[
+\Delta(p,p')=\max_{z\in[L,S]}\pos{R_{p'}(z)-R_p(z)},
+\]
+the largest loss of curve return, in reserve units, that it imposes on any coalition that could exit now. $\Delta$ measures gross, immediate exit opportunities; it does not capture changes in fees, in future opportunities, or in borrowing capacity. Moving reserve value \emph{down} the curve, toward the floor, increases $R_{p'}(z)$ at small depths. A reserve-neutral reshape that raises the floor always does this near depth zero, so when no tokens are locked it lowers the exit payoff of every sufficiently large coalition short of the whole supply; the coalition of all holders receives $R(S)$ before and after.
+
+\begin{proposition}[Harvesting the premium under locked supply]\label{prop:harvest}
+In a valid $\J$-state with $L>0$, let $p'$ be a schedule that agrees with $p$ on $[L,C)$ and satisfies $p'(0)\ge p(0)$ and $R_{p'}(L)=R_p(L)$. Then \op{Reshape}$(p',0)$ is admissible, reserve-neutral, and has zero exit distortion. The flat schedule $p'\equiv R_p(L)/L$ on $[0,L)$ is of this kind; it raises the floor to $R_p(L)/L$, which is strictly above $\Pf$ whenever $L>S_0$. For this flat schedule $R_{p'}(z)\ge R_p(z)$ for all $z\le L$, with equality at $z=0$ and $z=L$ and strict inequality for $0<z<L$ when $L>S_0$. Hence, once loans have been repaid, a coalition whose exit reaches a depth strictly between $0$ and $L$ has a lower exit payoff than before.
+\end{proposition}
+\begin{proof}
+$R_{p'}=R_p$ on $[L,S]$ because the schedules agree above $L$ and $R_{p'}(L)=R_p(L)$; hence (G2) holds and $\Delta=0$, and (G1) holds by assumption. If $L<C$, the flat schedule is non-decreasing across $L$ because the average of $p$ over $[0,L)$ is at most $p(L)$; if $L=C$ there is no price above $L$ and nothing to check. The flat level exceeds $\Pf$ when $p$ is not constant on $[0,L)$. For $z\le L$, $R_{p'}(z)=\tfrac zL R_p(L)\ge R_p(z)$ by \cref{lem:R}; equality at an interior point would force the convex function $R_p$ to be linear on $[0,L]$.
+\end{proof}
+
+\Citet{dabc2026} call this operation ``idle premium harvesting'': it frees capital that sits idle behind locked tokens. \Cref{prop:harvest} gives the precise sense in which it is harmless, namely for every exit that is feasible while the tokens stay locked, and the precise sense in which it is not: it lowers the payoff of deep partial exits after repayment in favor of those who exit last, and it raises every borrower's limit.
+
+Two practical points follow. A bound on dilution should be stated on $\Delta$ relative to $R(S)$, which has units of value, and not on pointwise price changes in absolute units, which lose meaning as the price scale changes. And a cumulative budget that the reconfiguring authority can itself reset bounds the harm between resets only; it protects holders only if the reset is immutable, or delayed long enough for holders to exit first.
+
+\subsection{Gross floor and net floor}\label{sec:net}
+
+\Cref{cor:redeem,cor:run} concern curve returns. If redemption carries a proportional fee $f_s$, the holder receives $(1-f_s)\,[R(S)-R(S-x)]$.
+
+\begin{proposition}[Net floor]\label{prop:net}
+If the sell fee charged on every redemption, in every state and for every size, is at most a constant $\fsbar<1$, then every redemption pays at least $(1-\fsbar)\,\Pf$ per token, and this bound never falls. Without such a cap the net redemption value of a token need not be monotone, although $\Pf$ is.
+\end{proposition}
+
+We call $(1-\fsbar)\Pf$ the \emph{net floor}. The distinction matters in practice. The fee policy studied in \vone{} is highest at the floor: with their reported parameters the sell-side multiplier at the floor is $2.5$, and the combined multiplier is capped at $15$ times the base fee. Under such a policy the statement ``every token can be redeemed at or above the floor'' holds for the curve return only. All loan statements in this paper are gross as well: (J2) says that the debt is below the gross floor value of the lock.
+
+\subsection{Integer arithmetic}\label{sec:integer}
+
+Contracts compute with integers. \Cref{thm:safety} survives if every rounding goes against the party that receives value.
+
+\begin{proposition}[Integer refinement]\label{prop:int}
+Let token and reserve amounts be integers and let $R$ be evaluated exactly as a rational number. Suppose that (r1) a buyer pays at least $R(S+x)-R(S)$; (r2) in a sale the cash $A$ falls by at most $R(S)-R(S-x)$, counting the seller's proceeds and any part of the fee that leaves the mechanism in the same operation; (r3) the guard \eqref{eq:ltv} is evaluated as an exact inequality between integers, equivalently the lock required for a requested debt is rounded \emph{up}; (r4) a full repayment releases the whole lock and a partial repayment releases $\lfloor\ell_i r/d_i\rfloor$ or less; and (r5) the guards (G1) and (G2) are evaluated exactly. Then \cref{thm:safety} holds as stated.
+\end{proposition}
+\begin{proof}
+Each of (r1)--(r5) implies the real-valued guard or effect used in the proof of \cref{thm:safety}.
+\end{proof}
+
+The corollaries on amounts then hold up to rounding, under one further condition. Rule (r2) is an upper bound and by itself guarantees no minimum. If the curve return is computed with exactly one rounding, as $\lfloor R(S)-R(S-x)\rfloor$, then a redemption of $x$ token units has an integer curve return of at least $\lfloor\Pf x\rfloor$, and the sum of the returns of a split redemption can fall short of the unsplit return by less than one reserve unit per part.
+
+Rule (r3) is the one that is easy to get wrong. If the lock for a requested debt $d$ is computed as $\lfloor d/(\gamma\Pf)\rfloor$, the borrower's limit is exceeded whenever the division is inexact, and a small enough request locks nothing at all. With a floor price of $2$, an LTV of $90\%$ and a request of $3$, the rounded-down lock is $1$ token of floor value $2$: the debt exceeds not only the LTV limit but the floor value itself. With a floor price of $100$, a request of $1$ locks $0$ tokens (script block N07). The excess per borrowing call is less than $\gamma$ times the value of one token unit. Whether that is negligible depends on the token's unit size and on how many calls can be made; in any case (J2) is then false as stated, and the margin $1-\gbar$ is all that stands between the accumulated error and the floor value.
+
+Net amounts need the same care. If the net proceeds of a redemption are computed with one rounding, as $\lfloor(1-f_s)\,[R(S)-R(S-x)]\rfloor$, then a redemption of $x$ token units pays at least $\lfloor(1-\fsbar)\Pf x\rfloor$. Rounding the curve return down and then the fee up can lose a further unit, which matters for \cref{prop:netclose}.
+
+An implementation must also define its floor when the lowest step is exhausted. The reference model of \cref{sec:evidence} keeps $\Pf=p(0)$ and a positive capacity: when a sale takes the supply below the floor capacity, that capacity is reduced to the supply, and if it reaches zero the step is dropped and the next step becomes the floor; the last remaining step of a curve is never reduced.
+
+\subsection{Carrying cost}\label{sec:carry}
+
+A perpetual loan with a one-time fee has no carrying cost, and \cref{sec:incentives} shows what that does to incentives. \Citet{dabc2026} obtain liquidation-free credit by excluding interest. A weaker condition suffices.
+
+\begin{proposition}[Capped accrual]\label{prop:carry}
+Add an operation \op{Accrue}$(i,\delta)$ with guard $\delta>0$, $d_i+\delta\le\gbar\Pf\ell_i$, and effect $d_i\gets d_i+\delta$. Then \cref{thm:safety} still holds.
+\end{proposition}
+\begin{proof}
+(J2) is the guard. $A+D$ increases, so (J3) is preserved. Parts (b) and (c) use only $\J$ and validity.
+\end{proof}
+
+Interest is therefore compatible with liquidation-free credit as long as it stops at the cap. A loan originated at $\gamma<\gbar$ can accrue until its debt has grown by the factor $\gbar/\gamma$, and every floor raise restores headroom. What is incompatible is \emph{uncapped} accrual: debt growing at a rate for ever stays below $\gbar\Pf(t)\ell$ only if the floor grows at least as fast, which no fee flow guarantees.
+
+The accounting of accrual is easy to misread. \op{Accrue} increases the surplus $W$ without any reserve being paid in. What has increased is the borrower's repayment obligation; the borrower's residual value $\Pf\ell_i-d_i$ has fallen by the same amount. Under $\J$ that additional claim releases backing capacity: it can fund a floor raise, or a \op{Skim} that withdraws cash already held. Neither endangers coverage, because $D\le\gbar\Pf L$ still holds and locked tokens cannot be redeemed; in particular $A\ge(1-\gbar)R(S)$ throughout. Economically, capped accrual transfers value from the borrower's residual to the other holders or to the recipient of the skim, up to the fraction $\gbar$ of the lock's floor value, without ever touching the locked tokens. Whether to adopt it is a design choice; the point here is that safety does not forbid it.

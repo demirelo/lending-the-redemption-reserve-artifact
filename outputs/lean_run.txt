@@ -1,0 +1,3 @@
+'FloorCredit.reach_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FloorCredit.reach_sell_payable' depends on axioms: [propext, Classical.choice, Quot.sound]
+'FloorCredit.sched_of_integral' depends on axioms: [propext, Classical.choice, Quot.sound]

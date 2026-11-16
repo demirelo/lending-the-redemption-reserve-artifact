@@ -1,0 +1,467 @@
+Compiling 4 files with Solc 0.8.26
+Solc 0.8.26 finished in 25.68s
+Compiler run successful!
+
+Ran 150 tests for test/Differential.t.sol:DifferentialTest
+[PASS] test_trace0() (gas: 13976748)
+[PASS] test_trace1() (gas: 11462548)
+[PASS] test_trace10() (gas: 10558542)
+[PASS] test_trace100() (gas: 12749564)
+[PASS] test_trace101() (gas: 16783814)
+[PASS] test_trace102() (gas: 8707646)
+[PASS] test_trace103() (gas: 10758730)
+[PASS] test_trace104() (gas: 10215499)
+[PASS] test_trace105() (gas: 8565545)
+[PASS] test_trace106() (gas: 8850463)
+[PASS] test_trace107() (gas: 14427177)
+[PASS] test_trace108() (gas: 8079934)
+[PASS] test_trace109() (gas: 8120787)
+[PASS] test_trace11() (gas: 10579830)
+[PASS] test_trace110() (gas: 12604123)
+[PASS] test_trace111() (gas: 14410461)
+[PASS] test_trace112() (gas: 10512130)
+[PASS] test_trace113() (gas: 11083095)
+[PASS] test_trace114() (gas: 9594133)
+[PASS] test_trace115() (gas: 14253722)
+[PASS] test_trace116() (gas: 9585720)
+[PASS] test_trace117() (gas: 14330279)
+[PASS] test_trace118() (gas: 7688897)
+[PASS] test_trace119() (gas: 9339372)
+[PASS] test_trace12() (gas: 14796832)
+[PASS] test_trace120() (gas: 9207806)
+[PASS] test_trace121() (gas: 12701195)
+[PASS] test_trace122() (gas: 17936263)
+[PASS] test_trace123() (gas: 10073141)
+[PASS] test_trace124() (gas: 10918309)
+[PASS] test_trace125() (gas: 7963653)
+[PASS] test_trace126() (gas: 7763840)
+[PASS] test_trace127() (gas: 8363714)
+[PASS] test_trace128() (gas: 8768809)
+[PASS] test_trace129() (gas: 15500845)
+[PASS] test_trace13() (gas: 10596382)
+[PASS] test_trace130() (gas: 10350494)
+[PASS] test_trace131() (gas: 11087200)
+[PASS] test_trace132() (gas: 11364320)
+[PASS] test_trace133() (gas: 11135312)
+[PASS] test_trace134() (gas: 9093752)
+[PASS] test_trace135() (gas: 9379934)
+[PASS] test_trace136() (gas: 9286667)
+[PASS] test_trace137() (gas: 7723046)
+[PASS] test_trace138() (gas: 8663446)
+[PASS] test_trace139() (gas: 13237656)
+[PASS] test_trace14() (gas: 9772105)
+[PASS] test_trace140() (gas: 11868206)
+[PASS] test_trace141() (gas: 7918120)
+[PASS] test_trace142() (gas: 10253752)
+[PASS] test_trace143() (gas: 8519280)
+[PASS] test_trace144() (gas: 7891779)
+[PASS] test_trace145() (gas: 14098073)
+[PASS] test_trace146() (gas: 9703393)
+[PASS] test_trace147() (gas: 7710699)
+[PASS] test_trace148() (gas: 11073061)
+[PASS] test_trace149() (gas: 12294194)
+[PASS] test_trace15() (gas: 15213773)
+[PASS] test_trace16() (gas: 16552502)
+[PASS] test_trace17() (gas: 10118231)
+[PASS] test_trace18() (gas: 9394654)
+[PASS] test_trace19() (gas: 10742872)
+[PASS] test_trace2() (gas: 10562199)
+[PASS] test_trace20() (gas: 8376468)
+[PASS] test_trace21() (gas: 7733611)
+[PASS] test_trace22() (gas: 10083535)
+[PASS] test_trace23() (gas: 10937208)
+[PASS] test_trace24() (gas: 11392161)
+[PASS] test_trace25() (gas: 11074608)
+[PASS] test_trace26() (gas: 13890968)
+[PASS] test_trace27() (gas: 14191984)
+[PASS] test_trace28() (gas: 11258115)
+[PASS] test_trace29() (gas: 8227575)
+[PASS] test_trace3() (gas: 11552140)
+[PASS] test_trace30() (gas: 9043135)
+[PASS] test_trace31() (gas: 16184866)
+[PASS] test_trace32() (gas: 13220826)
+[PASS] test_trace33() (gas: 11890700)
+[PASS] test_trace34() (gas: 12426801)
+[PASS] test_trace35() (gas: 15041051)
+[PASS] test_trace36() (gas: 10669872)
+[PASS] test_trace37() (gas: 12706932)
+[PASS] test_trace38() (gas: 11424731)
+[PASS] test_trace39() (gas: 7927064)
+[PASS] test_trace4() (gas: 11396338)
+[PASS] test_trace40() (gas: 9462344)
+[PASS] test_trace41() (gas: 11518561)
+[PASS] test_trace42() (gas: 12187087)
+[PASS] test_trace43() (gas: 10006147)
+[PASS] test_trace44() (gas: 12422933)
+[PASS] test_trace45() (gas: 13972832)
+[PASS] test_trace46() (gas: 8572990)
+[PASS] test_trace47() (gas: 10628989)
+[PASS] test_trace48() (gas: 10633117)
+[PASS] test_trace49() (gas: 12077570)
+[PASS] test_trace5() (gas: 10498148)
+[PASS] test_trace50() (gas: 12027167)
+[PASS] test_trace51() (gas: 14239121)
+[PASS] test_trace52() (gas: 8388714)
+[PASS] test_trace53() (gas: 14314757)
+[PASS] test_trace54() (gas: 11414317)
+[PASS] test_trace55() (gas: 11276714)
+[PASS] test_trace56() (gas: 11191162)
+[PASS] test_trace57() (gas: 9224594)
+[PASS] test_trace58() (gas: 7922651)
+[PASS] test_trace59() (gas: 11257911)
+[PASS] test_trace6() (gas: 9056553)
+[PASS] test_trace60() (gas: 10290219)
+[PASS] test_trace61() (gas: 8539152)
+[PASS] test_trace62() (gas: 11987006)
+[PASS] test_trace63() (gas: 7959505)
+[PASS] test_trace64() (gas: 20754550)
+[PASS] test_trace65() (gas: 10630094)
+[PASS] test_trace66() (gas: 11886553)
+[PASS] test_trace67() (gas: 14803453)
+[PASS] test_trace68() (gas: 8641200)
+[PASS] test_trace69() (gas: 7945464)
+[PASS] test_trace7() (gas: 11487682)
+[PASS] test_trace70() (gas: 13369331)
+[PASS] test_trace71() (gas: 11703337)
+[PASS] test_trace72() (gas: 8919642)
+[PASS] test_trace73() (gas: 12183045)
+[PASS] test_trace74() (gas: 13239944)
+[PASS] test_trace75() (gas: 11554041)
+[PASS] test_trace76() (gas: 10057928)
+[PASS] test_trace77() (gas: 10437090)
+[PASS] test_trace78() (gas: 8230394)
+[PASS] test_trace79() (gas: 8731608)
+[PASS] test_trace8() (gas: 9434294)
+[PASS] test_trace80() (gas: 11522773)
+[PASS] test_trace81() (gas: 9763238)
+[PASS] test_trace82() (gas: 7639060)
+[PASS] test_trace83() (gas: 7674985)
+[PASS] test_trace84() (gas: 9814198)
+[PASS] test_trace85() (gas: 9790273)
+[PASS] test_trace86() (gas: 11414908)
+[PASS] test_trace87() (gas: 13468437)
+[PASS] test_trace88() (gas: 12311643)
+[PASS] test_trace89() (gas: 12399356)
+[PASS] test_trace9() (gas: 10143925)
+[PASS] test_trace90() (gas: 9113624)
+[PASS] test_trace91() (gas: 9437703)
+[PASS] test_trace92() (gas: 8094007)
+[PASS] test_trace93() (gas: 11680004)
+[PASS] test_trace94() (gas: 9400454)
+[PASS] test_trace95() (gas: 11220112)
+[PASS] test_trace96() (gas: 8943941)
+[PASS] test_trace97() (gas: 12955104)
+[PASS] test_trace98() (gas: 8054180)
+[PASS] test_trace99() (gas: 12688664)
+Suite result: ok. 150 passed; 0 failed; 0 skipped; finished in 144.82ms (1.85s CPU time)
+
+Ran 31 tests for test/FloorCreditIssuer.t.sol:FloorCreditIssuerTest
+[PASS] testFuzz_RoundTripNeverProfits(uint256,uint256,uint16,uint16) (runs: 2000, μ: 2692001, ~: 2692488)
+[PASS] test_AbsurdBorrowAmountIsRefusedCleanly() (gas: 2472773)
+[PASS] test_BorrowGuardIsExact() (gas: 2653072)
+[PASS] test_CloseIsCoveredUnderTheParameterRule() (gas: 2484377)
+[PASS] test_ConstructorEnforcesParameterRule() (gas: 130221)
+[PASS] test_FirstRaiseInTheFirstEpoch() (gas: 2583224)
+[PASS] test_FullRedemptionExposesNextStepAsFloor() (gas: 2495802)
+[PASS] test_FullRepaymentReleasesWholeLock() (gas: 2585671)
+[PASS] test_IneffectiveRaiseIsRefused() (gas: 2627096)
+[PASS] test_LargeReserveKeepsCurveChangesLive() (gas: 2603008)
+[PASS] test_LastStepIsNeverRetired() (gas: 2437994)
+[PASS] test_LiftCapIsCheckedAtEveryBreakpoint() (gas: 2791896)
+[PASS] test_LiftCapMakesMintRaiseRedeemUnprofitable() (gas: 3188351)
+[PASS] test_NoReshapeAfterRaiseInSameEpoch() (gas: 2615373)
+[PASS] test_OneReshapePerEpoch() (gas: 2549411)
+[PASS] test_OnlyBorrowerCanRepay() (gas: 2599902)
+[PASS] test_RaiseAfterFullRedemptionInSameEpoch() (gas: 2603868)
+[PASS] test_RaiseFloorIsWaterFilling() (gas: 3029025)
+[PASS] test_RaiseStopsAtTheLargestRepresentablePrice() (gas: 2543520)
+[PASS] test_RaisesAcrossAnEpochBoundaryShareTheWindow() (gas: 2669118)
+[PASS] test_RaisesInOneEpochShareTheCap() (gas: 2665008)
+[PASS] test_ReshapeAtZeroSupplyKeepsTheFloorStep() (gas: 2577514)
+[PASS] test_ReshapeCannotLowerTheFloor() (gas: 2750740)
+[PASS] test_ReshapeMustBeFunded() (gas: 2621198)
+[PASS] test_ReshapeRespectsLiftCap() (gas: 2572006)
+[PASS] test_ReshapeThenRaiseAcrossABoundaryShareTheCap() (gas: 2629816)
+[PASS] test_SkimIsLimitedToSurplus() (gas: 2672360)
+[PASS] test_SmallRaiseDoesNotBlockLaterRaise() (gas: 2609440)
+[PASS] test_TotalCapacityIsBoundedSoMergedStepsAreRepresentable() (gas: 71878)
+[PASS] test_UnsolicitedTransferDoesNotEnterAccounting() (gas: 2530756)
+[PASS] test_ZeroLockLoanIsRefused() (gas: 2524900)
+Suite result: ok. 31 passed; 0 failed; 0 skipped; finished in 3.17s (555.02ms CPU time)
+
+Ran 8 tests for test/Invariant.t.sol:FloorCreditInvariantTest
+[PASS] invariant_J1_custody() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2727  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2685  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2748  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2864  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2833  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2744  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2743  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2708  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2750  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2704  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2697  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2728  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2759  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2710  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+[PASS] invariant_J2_loanCover() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2682  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2795  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2774  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2696  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2765  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2708  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2760  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2685  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2770  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2805  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2745  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2770  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2724  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2721  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+[PASS] invariant_J3_reserveAdequacy() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2764  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2759  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2761  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2795  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2680  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2692  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2695  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2793  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2760  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2775  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2664  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2635  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2754  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2873  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+[PASS] invariant_balanceCoversAccounting() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2716  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2774  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2786  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2821  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2791  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2807  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2675  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2810  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2685  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2678  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2684  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2669  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2733  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2771  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+[PASS] invariant_coverageWithSlack() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2698  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2819  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2685  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2757  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2704  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2796  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2654  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2674  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2736  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2703  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2807  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2789  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2778  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2800  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+[PASS] invariant_floorNeverFalls() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2813  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2721  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2704  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2763  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2706  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2679  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2785  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2823  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2767  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2665  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2716  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2834  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2688  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2736  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+[PASS] invariant_noLiquidityRefusal() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2672  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2759  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2733  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2715  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2811  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2714  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2698  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2743  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2810  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2688  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2730  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2730  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2766  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2831  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+[PASS] invariant_scheduleIsValid() (runs: 256, calls: 38400, reverts: 0)
+
+╭----------+---------------------+-------+---------+----------╮
+| Contract | Selector            | Calls | Reverts | Discards |
++=============================================================+
+| Handler  | borrow              | 2704  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | buy                 | 2690  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | close               | 2735  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | inflow              | 2660  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | lowerFloorAttempt   | 2856  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | raiseFloor          | 2729  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | repay               | 2758  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | reshapeTail         | 2763  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | sell                | 2842  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | setGamma            | 2775  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | skim                | 2609  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | transferTokens      | 2700  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | unsolicitedTransfer | 2798  | 0       | 0        |
+|----------+---------------------+-------+---------+----------|
+| Handler  | warp                | 2781  | 0       | 0        |
+╰----------+---------------------+-------+---------+----------╯
+
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 3.87s (22.90s CPU time)
+
+Ran 3 test suites in 3.87s (7.19s CPU time): 189 tests passed, 0 failed, 0 skipped (189 total tests)

@@ -1,0 +1,72 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{patterns,decorations.pathreplacing,calc}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Pf}{P_f}
+\newcommand{\gbar}{\bar\gamma}
+\newcommand{\fsbar}{\bar f_s}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\pos}[1]{\left(#1\right)^{+}}
+\newcommand{\op}[1]{{\normalfont\textsc{#1}}}
+\newcommand{\vone}{\citep{dabc2026}}
+\newcommand{\J}{\mathcal{J}}
+\setlist{itemsep=2pt,topsep=4pt}
+\input{sections/testnums}
+\input{sections/empnums}
+\input{sections/rewardnums}
+
+\title{\textbf{Lending the Redemption Reserve:\\ Collateral Release and Credit Limits}}
+\author{\"Omer Demirel\\[2pt] {\normalsize Snowfall Finance LLC}}
+\date{November 2026}
+\hypersetup{pdftitle={Lending the Redemption Reserve: Collateral Release and Credit Limits},pdfauthor={Ömer Demirel},pdfsubject={Reserve safety, collateral release, credit capacity, and participation},pdfkeywords={bonding curves, redemption reserve, collateralized lending, liquidation-free credit, decentralized finance, formal verification}}
+% Where a reader gets the code and data.
+\newcommand{\artifactlocation}{It is at \url{https://github.com/demirelo/lending-the-redemption-reserve-artifact}.}
+
+\emergencystretch=1.5em
+\begin{document}
+\maketitle
+
+\input{sections/abstract}
+\input{sections/intro}
+\input{sections/related}
+\input{sections/model}
+\input{sections/credit}
+\input{sections/incentives}
+\input{sections/equilibrium}
+\input{sections/extraction}
+\input{sections/evidence}
+\input{sections/empirics}
+\input{sections/discussion}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\appendix
+\input{sections/appendix}
+\input{sections/credit_appendix}
+
+\end{document}

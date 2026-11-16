@@ -1,0 +1,31 @@
+## mercury_bCredit.json
+0x36f3eae349acbc4d07973448b29421cdb622c336e7ea546ca6c4e38db77c890f Borrow(address bToken, address user, uint256 borrowed, uint256 fee, (uint128,uint128) post)
+0x5ae03fd0a09fe0fbbf66ab0e6e545fb76c14a16e40e763d0ab59a1ef511328ee CreditClaim(address bToken, address[] users, uint128[] collaterals, uint128[] debts)
+0x74bcb77fb25b1f5c24bff03370cb1f154a97999cd5bda7a903903d2cc08d8b70 Deleverage(address bToken, address user, uint256 collateralRedeemed, uint256 debtRepaid, uint256 collateralSold, uint256 refund, (uint128,uint128) post)
+0x45e202d2d36c7846d6d53971ffe792d5dace4037c9af46b384a71d72e8761884 Distributed(address bToken, address reserve, uint256 totalAmount, uint256 protocolFee, uint256 creatorFee, uint256 stakingFee)
+0x7dac1603a55d3840464c24d4931c43e563ca19429b7ae765e819941f7bb87837 Leverage(address bToken, address user, uint256 collateralAdded, uint256 debtAdded, uint256 collateralIn, uint256 reservesIn, (uint128,uint128) post)
+0xda0dc32c1e3ca53ee9f27754d750edeacdf7573f052ea74ef01fd49d53ff20da Repay(address bToken, address user, uint256 collateralRedeemed, uint256 debtRepaid, (uint128,uint128) post)
+## mercury_bSwap.json
+0x45e202d2d36c7846d6d53971ffe792d5dace4037c9af46b384a71d72e8761884 Distributed(address bToken, address reserve, uint256 totalAmount, uint256 protocolFee, uint256 creatorFee, uint256 stakingFee)
+0xa98f07efc4d0a837f30fe354a44231615ea1ef631a52a1c83fa7c19b5128dd0f Swap(address bToken, address user, uint256 activePrice, uint256 blvPrice, int256 bTokenDelta, int256 reserveDelta, uint256 totalFee, uint256 liquidityFee)
+## mercury_bStaking.json
+0x70eb43c4a8ae8c40502dcf22436c509c28d6ff421cf07c491be56984bd987068 Claim(address bToken, address user, uint256 amount)
+0x5fc70f0171c90baf6cad0d4f6218b5213a5bba33199aec219a77980c50e4d81b Deposit(address bToken, address user, uint256 amount, (uint128,uint128,uint128,uint256) post)
+0xc64b6267fa6fd0d6338cf97dc012b1d1ce8a0504a2f40d5099afd8dd1810f2b8 Liquidate(address bToken, address user, uint256 amount, (uint128,uint128,uint128,uint256) post)
+0xef2d1a64c29adde93d1a73995196cf50480e699e19ac7a07be2898bdff189ce8 Withdraw(address bToken, address user, uint256 amount, (uint128,uint128,uint128,uint256) post)
+## mercury_bController.json
+0x92d95d1d10106a45a636985bb95ad6f1ab3f36b8e046fa1d4263e1b99f4485f9 ApprovedCreditDeployerSet(address user, bool approved)
+0xd16790ba2e13960877459a2a4bc08c1567ddb3173d27536ebae2ec10845a6a80 CreatorFeePctSet(address bToken, uint256 creatorFeePct)
+0x7f11fe0c7098e1a76afcc68f35abaa07ef156fa7d6dd2d39664812fe37348d16 CreatorTransferred(address bToken, address newCreator)
+0x68ee1155c717cb6687be9b69fb1836837e8faf8242e173193101016ae51580a2 DeployerProfileSet(address deployer, (bool,bool,bool,uint64,uint64) profile)
+0x9f00477a7224dd6a6a421b4d1b36201ecc8f7396e3d2125129db5f6898bc37ba DeployerSet(address bToken, address deployer)
+0x15d80a013f22151bc7246e3bc132e12828cde19de98870475e3fa70840152721 FeeRecipientSet(address bToken, address feeRecipient)
+0x916d60cf5360c058722c013df4e95816ae5ddf71f4c218eb89d1afb76e047bb8 FeesClaimed(address bToken, address reserve, uint256 creatorAmount, uint256 protocolAmount)
+0xce517016a528bad743e1b1b056ff7a110c11984b45f33649757bf9db16523cd6 LiquidityFeePctSet(address bToken, uint256 liquidityFeePct)
+0x364512939b35c3636a04fc2ea0d7dff51e8efc42e9833230796ab002661e2e18 ReserveApproved(address reserve, bool approved)
+## mercury_bFactory.json
+0x5c088440a5ebbf647b6d40edac901a3319ab1219de322aadcd5e7046e0a2eab8 BTokenCreated(address bTokenAddress, string name, string symbol, uint8 decimals, uint256 totalSupply, address creator)
+0x6b40d9ac9d9dcc4ba6477664fdae5809a701208c8db1cbb7bc759993691146a9 Initialized(address bToken, uint256 activePrice, uint256 blvPrice, uint256 swapFeePct)
+0x28dfb2e3cc3e295eff8199284d79be6ddc49171b1382fda8dd2ee934ed923483 PoolCreated(address bTokenAddress, address reserveAddress, address creator, address feeRecipient, uint256 creatorFeePct, uint256 initialActivePrice, uint256 initialBlvPrice, uint256 totalReserves, uint256 totalBTokens, uint256 totalCollateral, uint256 totalDebt, bytes32 poolId)
+## mercury_feeLib.json
+0x45e202d2d36c7846d6d53971ffe792d5dace4037c9af46b384a71d72e8761884 Distributed(address bToken, address reserve, uint256 totalAmount, uint256 protocolFee, uint256 creatorFee, uint256 stakingFee)

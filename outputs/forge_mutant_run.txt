@@ -1,0 +1,10 @@
+# Contract mutant: guard (G1) deleted from _install. Command: forge test --match-contract FloorCreditInvariantTest
+Suite result: FAILED. 3 passed; 5 failed; 0 skipped; finished in 2.83s (13.68s CPU time)
+[FAIL: assertion failed: 1 != 0]
+[FAIL: assertion failed: 16080000000000000000000000 > 15645413486250739692270000]
+[FAIL: assertion failed: 313821539732804965624402000 < 313893606810822237948800000]
+[FAIL: assertion failed: 999999999999998607 < 1000000000000000007]
+[FAIL: floor decreased]
+[PASS] invariant_J1_custody() (runs: 256, calls: 38400, reverts: 65)
+[PASS] invariant_J3_reserveAdequacy() (runs: 256, calls: 38400, reverts: 100)
+[PASS] invariant_balanceCoversAccounting() (runs: 256, calls: 38400, reverts: 52)

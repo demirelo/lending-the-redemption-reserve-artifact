@@ -1,0 +1,53 @@
+\section{Algorithms and Executable Checks}\label{sec:algo}
+
+\subsection{Constructing the proportional envelope}\label{cr:algorithm}
+
+Order the loans so that $a_1\ge\cdots\ge a_n$, where $a_i=d_i/\ell_i$. Write $Q_j=\sum_{i\le j}\ell_i$, $B_j=\sum_{i\le j}d_i$, and $Q_0=B_0=0$. For $Q_{j-1}\le q\le Q_j$,
+\begin{equation}\label{cr:piecewiseH}
+H(q)=B_{j-1}+a_j(q-Q_{j-1}).
+\end{equation}
+To prove the formula, if an allocation retains some collateral from a smaller-ratio loan while a larger-ratio loan is not fully retained, transfer the smaller of the available two amounts to the larger-ratio loan. Total collateral stays fixed and remaining debt does not decrease. Repeating this exchange gives \eqref{cr:piecewiseH}. Ties have no effect on $H$.
+
+Suppose the input represents $p$ by $m$ intervals with rational endpoints, rational affine prices $p(q)=c_j+k_jq$ on each interval, $k_j\ge0$, and non-negative jumps between intervals. The reserve function is then continuous and piecewise quadratic, with exact rational values at rational arguments. Restrict all intervals to $[0,L]$ and merge their endpoints with the $Q_j$. On any interval of this merged partition,
+\[
+H(q)-R(q)=b+aq-cq-\tfrac12 kq^2
+\]
+for an appropriate constant $b$. A maximum on that interval is attained at an endpoint or, if $k>0$, at $q=(a-c)/k$ when that point lies in the interval. If $k=0$, endpoints suffice, including the case of a constant difference. Evaluating this finite candidate list therefore finds $W_{\min}$ exactly.
+
+Sorting requires $O(n\log n)$ comparisons. With price intervals already ordered, the merged scan takes $O(n+m)$ arithmetic operations; the number of candidates is linear in $n+m$. Rational additions, products and comparisons have polynomial bit complexity in the input length. This establishes polynomial-time exact evaluation for this representation. It makes no such computational claim for an unspecified real-valued function $p$.
+
+Concavity also gives a useful check: the slopes of $H-R$ cannot increase. A maximizer lies where these slopes change from non-negative to non-positive, or at an endpoint. The candidate method used in the script checks every merged interval, rather than relying on an approximate numerical root. The equal-ratio comparison in \cref{cr:capacity} needs no uniqueness of this maximizer. The closed form \eqref{cr:linearcapacity} follows by minimizing $P+kq/2+W/q$: for $W>0$ its unconstrained minimum is at $q=\sqrt{2W/k}$; if that depth exceeds $L$, the constrained minimum is at $L$. For $W=0$ the infimum is the limit $P$ at zero.
+
+\subsection{Guards for a proportional book}\label{cr:guards}
+
+Let the extended invariant be custody, the amount-domain conditions, and $W\ge W_{\min}$, with proportional release. This implies the immediate coverage condition because $H(L)=D$:
+\[
+A=R(S)-D+W\ge R(S)-R(L)\ge0.
+\]
+After a repayment, each surviving loan has the same ratio $a_i$ and a smaller collateral capacity. Its remaining residual configurations form a subset of the earlier ones, so the maximum defining $W_{\min}$ cannot increase. The repayment leaves $W$ unchanged. A gross sale leaves both the loan book and $W$ unchanged. A sale with a smaller total reserve outflow increases $W$. A purchase whose reserve inflow covers its curve cost also increases $W$ and leaves the existing loan book unchanged.
+
+A withdrawal of $w$ changes only $W$ and cash, so its exact safety guard is $w\le W-W_{\min}$. This bound implies that the withdrawal is affordable: $W_{\min}\ge D-R(L)$ and $R(L)\le R(S)$ give
+\[
+W-W_{\min}\le W-D+R(L)\le A.
+\]
+For a proposed new loan or top-up, calculate the resulting debt and locks and the total cash outflow. Accept only if the resulting $W'$ satisfies $W'\ge W_{\min}'$. This implies non-negative resulting cash by the preceding immediate-coverage argument. If the outflow is the gross new debt, then $W'=W$; a retained origination fee increases it. The use of resulting quantities is essential: checking only the old envelope is insufficient.
+
+For a reshape with external inflow $c$, the proposed surplus is $W'=A+c+D-R_{p'}(S)$. Require $W'\ge W_{\min}(p',\{\ell_i,d_i\})$. Proportional rights do not change with the schedule, so this is precisely the condition for the continuation with the new curve. A floor-monotonicity rule can additionally protect the promised floor; it is not a substitute for the new buffer test. For a more general release contract, the test must use its actual residual-pair sets, not the proportional envelope. Nothing here authorizes changing a borrower's contractual release rights merely to make a proposed reshape pass.
+
+\subsection{Whole-position release}\label{sec:whole}
+
+If a lock can only be released in full, the configurations to test are the subsets of loans, and the least reserve $W^{\mathrm{whole}}$ is the largest value of $\sum_{i\in J}d_i-R(\sum_{i\in J}\ell_i)$ over subsets $J$. Computing it exactly is hard in general: deciding safety is coNP-complete already for $R(q)=q+q^2/2$, by a reduction from PARTITION, although for integer locks of total $L$ a pseudopolynomial dynamic program decides it with $O(nL)$ rational arithmetic operations (\cref{cr:complexity}). A design does not need the exact value. The sorted envelope is a safe guard for whole-position release too, and it over-reserves by at most the largest amount by which a single loan exceeds the floor value of its lock:
+\[
+W^{\mathrm{whole}}\;\le\;W^{\mathrm{prop}}\;\le\;W^{\mathrm{whole}}+\max_i\,(d_i-\Pf\ell_i)^+ .
+\]
+The constant is sharp in general and improves to $\tfrac14$ for linear prices (\cref{cr:guardbound,cr:guardsharp}).
+
+\subsection{What is checked, and how}\label{sec:evidence}
+
+Three kinds of evidence support different parts of the paper, and we keep them apart.
+
+\emph{Machine-checked.} \Cref{thm:safety} is formalized in Lean~4 with Mathlib (\texttt{lean/Safety.lean}): the invariant, the step relation with every operation of \cref{sec:model}, preservation, and payability of sales, loans and skims on every reachable path. The formal statements are in \cref{app:lean}. The formalization covers the real-valued floor-cap contract. It does not cover the results of \cref{sec:credit,sec:subsidy,cr:nonlinear}.
+
+\emph{Implemented and tested.} A Solidity implementation of the floor-cap contract and an integer reference model in Python accompany the paper. The contract agrees with the model on every one of 30{,}000 replayed operations, including 1{,}441 attempted replacements of the schedule, of which 1{,}048 are admissible and 393 must be refused; stateful tests check the invariant after random sequences of calls, and the floor invariant is shown to fail when the floor guard is deleted from the contract; 189 tests pass in all. The contract is tested, not verified, and it implements neither of the two extensions.
+
+\emph{Proved on paper and checked in exact arithmetic.} The results of \cref{sec:credit,sec:subsidy,cr:nonlinear} are proved in the text. A script in exact rational arithmetic recomputes the examples of \cref{sec:credit,cr:nonlinear}, compares the sorted-envelope algorithm with exhaustive enumeration of residual states on 240 books (160{,}640 states, no mismatch), follows 144 repayment paths and 328 closes of the curve-valued contract without a shortfall, enumerates 2{,}696 subsets against the dynamic program, and confirms that four deliberately unsafe variants (coverage of the current state only; an average-ratio proxy for the reserve; a skim of the committed reserve; the old reshape guards with the new loan cap) each admit a path with a cash shortfall. These are finite checks of the calculations; the general statements rest on the proofs. The remaining numerical examples are evaluated by a second script, in floating point where a square root occurs.

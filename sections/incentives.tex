@@ -1,0 +1,201 @@
+\section{Incentives}\label{sec:incentives}
+
+This section returns to the floor-cap contract of \cref{sec:model}. The alternative release contracts and buffered loan books in \cref{sec:credit} require their own behavioral analysis; the results below are not asserted for them.
+
+\Cref{thm:safety} holds whatever borrowers do. This section asks what a borrower gains from each available action. The analysis is decision-theoretic: it compares the plans of one agent who takes the rules, the prices and the behavior of others as given. It rests on four assumptions, and takes $\gbar<1$ until \cref{sec:general}.
+
+\begin{itemize}
+\item[(A1)] The agent values reserve-asset cash flows only, discounted at an outside rate $\rho\ge0$ at which the agent can also invest.
+\item[(A2)] A token pays nothing while it is held, locked or free. Its only cash flow is the proceeds of its eventual redemption.
+\item[(A3)] Loans are as in \cref{sec:model}: no interest, no maturity, and an origination fee at rate $\phi\in[0,1)$ deducted from the proceeds. Every redemption pays the curve return less a proportional sell fee $f_s$, and $f_s\le\fsbar<1$ in every state and for every size.
+\item[(A4)] The agent is a price taker: the agent's own choices between the plans compared do not change the schedule, the fees, or the amounts the agent later receives per token.
+\end{itemize}
+
+Throughout, $v\ge\Pf$ denotes the curve return per token that the agent would obtain by redeeming at the time considered.
+
+Assumption (A2) excludes tokens that earn fees or rewards while locked, and (A4) excludes agents large enough to move the curve by their own financing choice. Both matter for applying the results to a particular system.
+
+\subsection{The borrower's claim}
+
+A borrower with loan $(\ell,d)$ holds the right, without expiry, to receive $\ell$ tokens against payment of $d$. In form this is a perpetual American call on $\ell$ tokens with strike $d$. We use the option only as a description of the borrower's rights: at the floor nothing in this section is random, and the results below are comparisons of dated cash flows, not option values. Two features of the claim matter. The strike is below the floor value of the underlying, $d\le\gbar\Pf\ell$, so the option is in the money at the gross floor in every state, and it moves further into the money whenever the floor rises. And there is no carrying cost: nothing is paid for keeping it open.
+
+\subsection{Exit routing: redeem, or borrow and abandon}
+
+A holder who wants cash now has two routes. Redeeming $\ell$ tokens yields $(1-f_s)\,v\,\ell$. Locking them, borrowing to the limit and never repaying yields $\gamma(1-\phi)\,\Pf\,\ell$, and leaves the holder with the claim described above.
+
+\begin{proposition}[Exit routing]\label{prop:route}
+\begin{enumerate}[label=(\alph*)]
+\item If $\gamma(1-\phi)\,\Pf\ge(1-f_s)\,v$, borrowing to the limit weakly dominates redeeming: it pays at least as much cash at once and retains a claim of non-negative value. At the floor ($v=\Pf$) the condition reads $f_s\ge 1-\gamma(1-\phi)$.
+\item If $\gbar+\fsbar<1$, redeeming pays strictly more cash at once than borrowing to the limit, in every state and under every policy $\gamma\le\gbar$ and $\phi\ge0$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) The borrower is never obliged to repay, so the retained claim is worth at least zero. (b) $\gamma(1-\phi)\Pf\le\gbar\Pf<(1-\fsbar)\Pf\le(1-f_s)\,v$.
+\end{proof}
+
+Part~(b) compares immediate cash only. A holder may still prefer to borrow, because the loan keeps the upside of the token; what (b) rules out is that the loan book pays \emph{more cash} than the redemption function to someone who wants to leave.
+
+When (a) applies, a seller is better served by the credit facility than by the redemption function, and what the issuer receives changes accordingly. With fees retained in the reserve, a redemption at the floor releases one unit of floor reserve, keeps the fee $f_s$ as surplus and removes the token from the supply. An abandoned maximal loan pays out $\gamma(1-\phi)$, keeps only $\gamma\phi$ as surplus, and leaves a token locked for ever; that token continues to count in the lift cost of every later floor raise (\cref{sec:raise}).
+
+With $\gamma=0.9$ and $\phi=0.03$, borrowing and abandoning yields $0.873$ per unit of floor value, so at the floor it pays at least as much cash as redeeming when the sell fee is $12.7\%$ or more, and strictly more above that (script block N03). Whether a given fee policy reaches that level depends on its parameters. For illustration, the policy proposed in \vone{} multiplies the base sell fee by $2.5$ at the floor and by a further size factor of up to $3$; with a base fee of $3\%$ that is $7.5\%$ for a small sale at the floor and up to $22.5\%$ for a large one. Under such a policy with a $90\%$ LTV, a sufficiently large seller at the floor would obtain more cash from the loan book than from redemption.
+
+\subsection{Repayment}
+
+\begin{proposition}[Deferring repayment]\label{prop:repay}
+Assume (A1)--(A4), and let the release rule on partial repayment depend only on the loan and the repayment, as in \cref{sec:model}. Consider a plan in which a borrower makes a repayment at time $t$ and, until a later time $t'$, performs no operation on that loan and none with the tokens that the repayment releases. The plan that makes the same repayment at $t'$ instead, and is otherwise identical, is feasible and yields a weakly higher payoff, strictly higher if $\rho>0$. Consequently, if an optimal plan exists, there is one in which every repayment is immediately followed by a sale or other use of the released tokens. At such a moment, repaying $d$ and redeeming the $\ell$ released tokens is profitable if and only if
+\begin{equation}\label{eq:close}
+(1-f_s)\,v\,\ell\;>\;d .
+\end{equation}
+\end{proposition}
+\begin{proof}
+A loan has no maturity and its debt does not grow, and by hypothesis neither the loan nor the released tokens are used between $t$ and $t'$, so the loan's state when the repayment is made is the same in both plans, the release rule returns the same number of tokens, and the delayed plan is feasible. By (A2) the released tokens produce nothing in the interval, and by (A4) nothing else changes. The two plans differ only in the date of one payment, and paying later is weakly better at any rate $\rho\ge0$, strictly if $\rho>0$. The last claim compares the net proceeds of the redemption with the repayment.
+\end{proof}
+
+This is the classical observation that an American call on an asset without payouts need not be exercised early \citep{merton1973}, in a setting where waiting is free. The hypothesis that the tokens are left idle matters: a borrower who repays to re-lock the tokens and borrow more is using them, and the proposition does not apply to that repayment, although a top-up achieves the same without repaying.
+
+The consequence for the loan book is that, under these assumptions, repayments have no reason to arrive at any regular rate. They arrive when borrowers want to use or sell their tokens. A borrower with $\rho>0$ who does not intend to sell has no reason to repay. Loans that stay open for a long time are therefore what one should expect from long-term holders, and are not by themselves evidence of lost keys.
+
+Condition \eqref{eq:close} also shows when abandoning a loan is the better choice.
+
+\begin{corollary}[Loans worth closing]\label{cor:close}
+If $\gbar+\fsbar<1$, then \eqref{eq:close} holds for every loan in every reachable state: closing a loan to redeem always leaves a positive amount. If instead $d\ge(1-f_s)\,\Pf\,\ell$ for some loan, closing it to redeem pays only if the curve return per token exceeds $d/((1-f_s)\ell)$.
+\end{corollary}
+\begin{proof}
+$d\le\gbar\Pf\ell<(1-\fsbar)\Pf\ell\le(1-f_s)\,v\,\ell$.
+\end{proof}
+
+\subsection{Utilization}
+
+\begin{proposition}[Borrow or hold]\label{prop:util}
+Assume (A1)--(A4) with $\rho>0$. A holder of $\ell$ tokens intends to redeem them at a time $T\in(0,\infty)$ and, by (A4), receives the same net proceeds then whether or not the tokens were locked in the meantime. Compared with holding the tokens free until $T$, locking them, borrowing $b\le\gamma\Pf\ell$ now and repaying at $T$ changes the holder's present value by
+\begin{equation}\label{eq:util}
+b\,\bigl[(1-\phi)-e^{-\rho T}\bigr],
+\end{equation}
+which is positive if and only if
+\begin{equation}\label{eq:Tstar}
+T\;>\;T^\ast=\frac{1}{\rho}\,\ln\frac{1}{1-\phi}.
+\end{equation}
+If $\rho=0$ the change is $-\phi b\le0$. A holder who never intends to redeem gains $(1-\phi)\,b$ by borrowing and never repaying.
+\end{proposition}
+\begin{proof}
+The holder receives $(1-\phi)b$ now and pays $b$ at $T$; the proceeds at $T$ are the same in both plans.
+\end{proof}
+
+With $\phi=3\%$ and $\rho=5\%$ a year, $T^\ast$ is $7.3$ months; with $\phi=1\%$ and $\rho=4\%$ it is $3.0$ months (script block N02). The comparison ignores the option not to repay, which only favors borrowing, and a rising floor adds borrowing capacity on the same lock. Under the assumptions, then, every holder whose horizon exceeds $T^\ast$ borrows to the limit, and the debt tends to $\gamma\Pf$ times the supply held by such holders. As a share of the curve reserve this is at most $\gamma\Pf S/R(S)$: close to $\gamma$ when the market is at the floor, and small when most of the reserve is premium above the floor. \Cref{thm:safety} says that any such state is safe.
+
+Two points about pricing follow. First, an origination fee is not an interest rate: the cost of a loan held for a time $T$ is $\phi/T$ per unit of time and per unit of gross debt, or $\phi/((1-\phi)T)$ per unit of cash received, and tends to zero as $T$ grows. Raising $\phi$ for new loans changes $T^\ast$ for future borrowers and has no effect on any open loan. Second, if the reserve asset earns a yield that would otherwise accrue to the issuer, each unit lent forgoes that yield for as long as the loan is open, in exchange for $\phi$ once; lending then pays for the issuer only on loans shorter than about $\phi$ divided by that yield. A carrying cost within the limits of \cref{prop:carry} is an instrument that addresses both.
+
+\subsection{Leverage}
+
+The floor-valued leverage of a locked position is bounded on every path.
+
+\begin{proposition}[Leverage bound]\label{prop:lev}
+In every reachable state every loan satisfies $d_i/(\Pf\ell_i)\le\gbar$. With $\gbar<1$, the ratio of the floor value of a locked position to its floor-valued equity, $\Pf\ell_i/(\Pf\ell_i-d_i)$, is at most $1/(1-\gbar)$.
+\end{proposition}
+\begin{proof}
+This is (J2), for records with $\ell_i>0$.
+\end{proof}
+
+The bound holds across top-ups, floor raises and reconfigurations because it is part of the invariant. It is independent of the fees: fees reduce the size of the position a given capital can build, not its ratio of debt to floor value.
+
+A borrower can reach the bound by looping: buy, lock, borrow, buy again. Let round $k$ spend a budget $B_k$ at a price $\pi_k\Pf$ with $\pi_k\ge1$, pay a proportional buy fee $f_b$, and borrow to the limit at a fixed floor. The budget buys $B_k/(\pi_k\Pf(1+f_b))$ tokens, against which $\gamma B_k/(\pi_k(1+f_b))$ is borrowed and the fraction $1-\phi$ of that is received. So $B_{k+1}=\eta_k B_k$ with
+\[
+\eta_k=\frac{\gamma\,(1-\phi)}{\pi_k\,(1+f_b)}\;\le\;\gamma(1-\phi)<1 .
+\]
+If the purchase price does not fall from round to round, $\eta_k\le\eta_0$ and total purchases are at most $B_0/(1-\eta_0)$. \Cref{tab:loop} gives the full accounting for the example used in \vone. The table there lists the net proceeds, $6{,}874$; the outstanding debt, which includes the fees, is $7{,}087$. The quantity $1/(1-\eta)=7.87$, called leverage there, is the ratio of total purchases to initial capital. The position's debt-to-floor-value ratio is $\gamma=0.9$, and its floor-valued leverage is $10$, for every fee level.
+
+\begin{table}[t]
+\centering\small
+\caption{Accounting of the leverage loop with initial budget $B_0=1{,}000$, $\gamma=0.90$, $\phi=0.03$, purchases at the floor, no trading fee. Script block N01.}\label{tab:loop}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Reinvestment ratio $\eta=\gamma(1-\phi)$ & $0.873$\\
+Total purchases, equal to the floor value of tokens held & $7{,}874.02$\\
+Outstanding debt (gross) & $7{,}086.61$\\
+Origination fees paid & $212.60$\\
+Net proceeds reinvested & $6{,}874.02$\\
+Equity at floor value (= initial budget $-$ fees) & $787.40$\\
+Purchases / initial budget, $1/(1-\eta)$ & $7.87$\\
+Floor value / equity, $1/(1-\gamma)$ & $10.00$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Leverage of this kind cannot be liquidated, but it has consequences for others. Each round of the loop mints tokens further up the curve with money that the previous round borrowed from the reserve, so the marginal price reflects purchases of up to $1/(1-\eta_0)$ times the capital actually committed.
+
+\subsection{Closing without a liquidator}
+
+\begin{proposition}[Collateral-netted close]\label{prop:netclose}
+For a loan $(\ell_i,d_i)$ in a state with supply $S$, define \op{Close}$(i)$ as the atomic composition of \op{Repay}$(i,d_i)$, which releases all $\ell_i$ tokens, and \op{Sell}$(i,\ell_i)$, in which the repayment is taken from the sale proceeds. It is executable if and only if $(1-f_s)\,[R(S)-R(S-\ell_i)]\ge d_i$, it preserves $\J$, and it pays the borrower the difference. If $\gbar+\fsbar\le1$ it is executable for every loan in every reachable state. The same holds in integer arithmetic when the net proceeds are rounded down once, with a residual that is non-negative but may be zero.
+\end{proposition}
+\begin{proof}
+It is a composition of two operations that preserve $\J$; netting only removes the need for the borrower to hold $d_i$ beforehand. The condition says the net amount is non-negative. For the second claim, $R(S)-R(S-\ell_i)\ge\Pf\ell_i$ and $d_i\le\gbar\Pf\ell_i\le(1-\fsbar)\Pf\ell_i$. For the integer claim, $d_i$ is an integer not exceeding $(1-f_s)[R(S)-R(S-\ell_i)]$, hence not exceeding its integer part.
+\end{proof}
+
+Under the rule, a borrower can thus always leave with the residual value of the position and no outside capital, and the issuer never needs a liquidator to make that possible.
+
+\Citet{dabc2026} suggest, as a remedy for loans that stay open, that after a period of inactivity a third party may repay a loan and have the released tokens burned. Such a buyout needs the borrower's prior consent to fit \cref{def:liqfree}: without it, locked tokens are removed by an operation other than the borrower's own repayment, and the option that a borrower can rationally hold open (\cref{prop:repay}) ends. A design also has to say who receives the borrower's residual value $\Pf\ell_i-d_i$. Mechanisms that respect the definition exist: loans can be made transferable so that a borrower can sell the position; a borrower can authorize a close in advance at a stated price; and capped accrual (\cref{prop:carry}) charges for keeping a loan open without removing any token.
+
+\subsection{A parameter rule}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.72\textwidth,height=6.2cm,xlabel={sell fee at the floor},ylabel={LTV},
+  xmin=0,xmax=0.30,ymin=0.6,ymax=1.0,legend cell align=left,
+  legend style={at={(0.5,-0.3)},anchor=north,legend columns=2,font=\footnotesize,/tikz/every even column/.append style={column sep=1em}},
+  xtick={0,0.05,0.10,0.15,0.20,0.25,0.30},xticklabels={0,5\%,10\%,15\%,20\%,25\%,30\%},
+  tick label style={font=\footnotesize},label style={font=\small}]
+\addplot[very thick,blue!70!black] table[x=fs,y=gRC] {figures/regions.dat};
+\addlegendentry{$\gamma=1-f_s$}
+\addplot[thick,dashed,red!70!black] table[x=fs,y=gER] {figures/regions.dat};
+\addlegendentry{$\gamma(1-\phi)=1-f_s$, $\phi=3\%$}
+\addplot[only marks,mark=*,mark size=2pt] coordinates {(0.03,0.90) (0.075,0.90) (0.225,0.90)};
+\node[font=\footnotesize,anchor=north] at (axis cs:0.03,0.89) {$3\%$};
+\node[font=\footnotesize,anchor=north] at (axis cs:0.075,0.89) {$7.5\%$};
+\node[font=\footnotesize,anchor=north] at (axis cs:0.225,0.89) {$22.5\%$};
+\node[font=\footnotesize,align=center] at (axis cs:0.09,0.70) {redeeming pays more cash;\\closing leaves a residual};
+\node[font=\footnotesize,align=center] at (axis cs:0.235,0.95) {abandoning\\pays more cash};
+\end{axis}
+\end{tikzpicture}
+\caption{A maximal loan at the floor, as a function of the LTV and of the sell fee charged on a redemption at the floor. Below the solid line, closing the loan to redeem leaves a positive residual. On or above the dashed line, borrowing and never repaying pays at least as much cash as redeeming. The rule $\gbar+\fsbar<1$ keeps every admissible pair below the solid line. The marked points are an LTV of $90\%$ with sell fees of $3\%$, $7.5\%$ and $22.5\%$.}\label{fig:regions}
+\end{figure}
+
+Several results of this section follow from one inequality between two caps,
+\begin{equation}\label{eq:rule}
+\gbar+\fsbar\;<\;1 ,
+\end{equation}
+equivalently $\gbar\Pf$ is below the net floor $(1-\fsbar)\Pf$. Under \eqref{eq:rule} redemption always pays more cash than borrowing and abandoning (\cref{prop:route}), closing a loan to redeem always leaves a positive amount (\cref{cor:close}), and every loan can be closed from its own collateral (\cref{prop:netclose}). The rule is a uniform sufficient condition. It is an inequality between immutable caps, so it can be enforced at deployment; but $\fsbar$ must bound the sell fee on \emph{every} redemption, not only at the floor, since a fee above $\fsbar$ on a redemption above the floor can make that redemption pay less than the loan. The two thresholds behind the rule are distinct, as \cref{fig:regions} shows: at the floor, abandoning pays at least as much cash as redeeming when $f_s\ge1-\gamma(1-\phi)$; and closing a maximal loan leaves nothing at $f_s=1-\gamma$ and is not covered by the proceeds above that. The rule does not address utilization (\cref{prop:util}), which is a consequence of zero carry and is unaffected by any choice of $\gbar$ and $\fsbar$.
+
+\subsection{Full-floor loans, earning collateral and other fee shapes}\label{sec:general}
+
+Deployed designs differ from assumptions (A2) and (A3) in three ways that matter. Loans may be granted at the full floor value ($\gbar=1$). Locked tokens may earn fees or rewards. And the sell fee may not be proportional to the whole price: Baseline charges it on the part of the price above the floor \citep{baselinedocs}. The results of this section extend to these cases with two changes of notation.
+
+\begin{definition}[Net-floor ratio]
+The \emph{net-floor ratio} of a fee policy is the largest $n\in(0,1]$ such that every redemption of $x$ tokens, in every state, pays at least $n\,\Pf\,x$ net of fees.
+\end{definition}
+
+A proportional sell fee that never exceeds $\fsbar$ has $n\ge1-\fsbar$, with equality if the fee at the floor can reach the cap. A fee that is charged only on the part of the price above the floor has $n=1$.
+
+\begin{itemize}
+\item[(A2$'$)] A token pays a flow $e_F\ge0$ per unit of time while it is free and $e_L\ge e_F$ while it is locked; its other cash flow is the proceeds of its eventual redemption.
+\end{itemize}
+
+\begin{proposition}[Generalized incentive results]\label{prop:general}
+Assume (A1), (A2$'$), (A4), loans without interest or maturity with origination fee $\phi$, any $\gbar\le1$, and a fee policy with net-floor ratio $n$.
+\begin{enumerate}[label=(\alph*)]
+\item \emph{Exit routing.} If $\gbar(1-\phi)<n$, redeeming pays strictly more cash at once than borrowing to the limit, in every state.
+\item \emph{Close.} If $\gbar\le n$, the collateral-netted close of every loan is covered by its proceeds in every reachable state, with residual at least $(n-\gbar)\Pf\ell_i$.
+\item \emph{Deferral.} The deferral statement of \cref{prop:repay} holds, and repaying $d$ to redeem the released tokens is profitable if and only if the net proceeds of that redemption exceed $d$.
+\item \emph{Borrow or hold.} For $\rho>0$ and a finite horizon $T$, borrowing $b$ against $\ell$ tokens now and repaying at $T$ changes the holder's present value by
+\[
+b\,\bigl[(1-\phi)-e^{-\rho T}\bigr]+\ell\,(e_L-e_F)\,\frac{1-e^{-\rho T}}{\rho},
+\]
+which is positive for every $T>T^\ast$. For a fixed $T$ and $b>0$ it is positive if and only if $\phi<(1-e^{-\rho T})\bigl(1+\ell\,(e_L-e_F)/(\rho b)\bigr)$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) Borrowing to the limit pays at most $\gbar(1-\phi)\Pf$ per token and redeeming at least $n\Pf$. (b) The net proceeds of redeeming the lock are at least $n\Pf\ell_i$ and the debt is at most $\gbar\Pf\ell_i$. (c) In the proof of \cref{prop:repay}, the released tokens now earn $e_F$ between $t$ and $t'$ where the locked tokens would have earned $e_L\ge e_F$, so delaying remains weakly better. (d) The first term is as in \cref{prop:util}; the second is the present value of the difference in earnings over $[0,T]$. The condition on $\phi$ rearranges the inequality.
+\end{proof}
+
+For a design with full-floor loans, a positive origination fee, a sell fee on the premium only, and the same earnings for locked and free staked tokens ($\gbar=1$, $n=1$, $e_L=e_F$), the proposition gives: redeeming pays more cash than borrowing and abandoning, because of the origination fee; every loan can be closed from its collateral, with a residual that is positive exactly when the net proceeds of the redemption exceed the current debt: zero for a loan at the limit, $d=\Pf\ell$, redeemed at the floor, and positive if the debt is below the floor value of the lock (as after a floor raise that has not been borrowed against) or if the redemption leaves a positive premium after fees; repayment is deferred until the tokens are used; and a holder gains by borrowing when the horizon exceeds $T^\ast$. With $\phi=1\%$ and $\rho=5\%$ a year, $T^\ast$ is $2.4$ months. \Cref{sec:empirics} compares these statements with data from such a design.

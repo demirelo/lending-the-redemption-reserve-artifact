@@ -1,0 +1,33 @@
+Credit capacity and collateral release: exact finite checks
+Arithmetic: Fraction; deterministic seeds; no external packages
+CF01 exact examples
+  uniform buffer=1/8; stress depth=1/2
+  concentrated buffer=3/8; stress depth=1/2
+  proportional half-release cash without buffer=-1/8
+  same release cash with committed buffer=0
+  nonlinear remaining lock is in [145284707521/250000000000, 116227766017/200000000000]
+  nonlinear released tokens (display only)=0.418861169916
+  capacity gain from merging two one-token locks=1
+CF02 sorted envelope versus exhaustive rational residual states
+  curves=5; books=240; residual states=160640
+  exact interval candidates=1399; zero-buffer books=11
+  mismatches=0; equal-ratio weak-minimum checks passed
+CF03 aggregate capacity
+  closed-form boundary cases=24; all feasible
+  increasing aggregate debt by 1/100 violates the buffer in every case
+CF04 nonlinear collateral release
+  exact residual-path cases=144; cash shortfalls=0
+  release bounds passed; atomic netted closes=328; shortfalls=0
+CF05 whole-position subset coverage and PARTITION reduction
+  integer books=125; subsets enumerated=2696
+  PARTITION yes cases=80; no cases=45
+  subset enumeration / integer DP / independent subset-sum mismatches=0
+  all constructed books reachable through immediately covered states
+CF06 directed unsafe mutations
+  detected: current aggregate coverage only; exact cash shortfall=1/8
+  detected: average-ratio buffer proxy; exact cash shortfall=1/4
+  detected: skim the committed reserve; exact cash shortfall=1/8
+  detected: old reshape guards with new debt anchor; exact cash shortfall=1/2
+  mutations detected=4 / 4
+PASS: all stated finite checks completed
+Status: analytic results are not Lean-verified; no production-contract claim

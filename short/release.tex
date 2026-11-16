@@ -1,0 +1,57 @@
+\section{More Credit with a Different Release Rule}\label{cr:nonlinear}
+
+
+There is also a way to use the curve premium without an additional committed reserve. Suppose a partial repayment reduces debt but releases no collateral until the loan is fully repaid. By \cref{cr:kernel}, with $W=0$ such a book is safe under all repayments if and only if
+\begin{equation}\label{cr:fullrelease}
+d_i\le R(\ell_i)\qquad\text{for every loan}.
+\end{equation}
+Each remaining debt is at most its initial debt at the unchanged lock, and fully repaid loans disappear. Thus \eqref{cr:fullrelease} is the largest per-loan cap compatible with these rights and with the possibility that every other borrower exits.
+
+Partial collateral release is possible if its amount is changed. Consider the operations of \cref{sec:model}, with the following replacements. The persistent loan condition is
+\begin{equation}\label{cr:nonlinearcover}
+d_i\le\gbar R(\ell_i),\qquad 0<\gbar\le1.
+\end{equation}
+A borrow is guarded by $d_i+b\le\gamma R(\ell_i+\ell^+)$, with $0<\gamma\le\gbar$. A partial repayment of $r$ may release $u\in[0,\ell_i]$ only if $d_i-r\le\gbar R(\ell_i-u)$; full repayment releases the whole lock. A reshape preserves \eqref{cr:nonlinearcover} for every loan under the new $R$, as well as satisfying (G1) and (G2). Custody, the definitions of $A,D,W$, and the remaining operations are unchanged. The release rule and the debt anchor are both different from those of the original model.
+
+\begin{proposition}[Safety with a curve-valued lock]\label{cr:nonlinearsafety}
+These operations preserve custody, \eqref{cr:nonlinearcover} and $A+D\ge R(S)$. Every free-token gross redemption and every admitted loan can be paid in full, without any repayment by another borrower. If proportional sell fees satisfy $f_s\le\fsbar$ and $\gbar+\fsbar\le1$, every loan can also be closed from its own collateral. The close leaves a positive residual when $\gbar+\fsbar<1$.
+\end{proposition}
+\begin{proof}
+By \eqref{cr:superadd}, $D\le\gbar\sum_iR(\ell_i)\le\gbar R(L)$. This is the aggregate bound used in the coverage and cash-payout steps of \cref{thm:safety}. The modified borrow, repayment and reshape guards preserve the new individual condition; the other induction steps are unchanged. In particular a borrow gives $D+b\le\gbar R(S)$, so $A-b\ge(1-\gbar)R(S)$. For a close, monotonicity of $p$ gives
+\[
+R(S)-R(S-\ell_i)\ge R(\ell_i),
+\]
+and net proceeds are therefore at least $(1-\fsbar)R(\ell_i)\ge d_i$. Let the borrower close and redeem in one operation, in which the debt is netted against the proceeds of the lock. If $G=R(S)-R(S-\ell_i)$ is the gross return, the combined reserve outflow is at most $G-d_i$, and
+\[
+A-(G-d_i)=W+R(S-\ell_i)-(D-d_i)\ge0,
+\]
+because the other locks total at most $S-\ell_i$ and satisfy \eqref{cr:superadd}. With a strict inequality between the caps, the borrower's residual is at least $(1-\fsbar-\gbar)R(\ell_i)>0$.
+\end{proof}
+
+Since $R$ is strictly increasing, the largest release allowed by the new repayment guard is
+\begin{equation}\label{cr:maxrelease}
+u_{\max}(r)=\ell_i-R^{-1}\!\left(\frac{d_i-r}{\gbar}\right).
+\end{equation}
+At a loan's limit $d_i=\gbar R(\ell_i)$, convexity implies $u_{\max}(r)\le\ell_i r/d_i$. Paying half the debt therefore need not release half the tokens. For the unit lock of \cref{cr:rights} with $R(q)=q+q^2/2$, debt $3/2$ and $\gbar=1$, repaying $3/4$ releases $2-\sqrt{5/2}\simeq0.418861$ tokens, whose curve return is exactly $3/4$. An integer implementation must round the remaining required lock upward; this section's result is real-valued, not a verification of such an implementation.
+
+\paragraph{The stronger reshape guard matters.}
+Let $p(q)=1+q$, $S=2$, one token locked against $d=3/2$, one token free, and $A=5/2$. Replace the curve by prices $1$ on $[0,1)$ and $3$ on $[1,2)$. The floor remains $1$ and total reserve remains $R(2)=4$, so (G1) and (G2) hold. But the new $R(1)=1$ no longer covers the loan, and the free token's return $3$ exceeds cash. Requiring $d_i\le\gbar R_{p'}(\ell_i)$ rejects this change. A sufficient condition that avoids inspecting each loan is $R_{p'}(z)\ge R_p(z)$ for all $z\le S$, together with funding; a floor raise that lifts every price below a level $y$ to $y$ and leaves the others unchanged satisfies this condition. The new release rule can depend on the curve, so results that assume a release rule depending only on the loan, such as the deferral result of the extended version, do not automatically extend to it.
+
+\subsection{Pooling, splitting and independent exit}\label{cr:pooling}
+
+The additional capacity in \eqref{cr:fullrelease} depends on position size. Combining locks $x,y$ increases the maximum debt by
+\begin{equation}\label{cr:poolgain}
+R(x+y)-R(x)-R(y)
+=\int_0^y[p(x+u)-p(u)]\,du\ge0.
+\end{equation}
+For $p(q)=P+kq$ the gain is $kxy$. This is the value, in lending capacity, of keeping the collateral subject to a joint release condition. A split need not be feasible after the additional credit has been drawn.
+
+\begin{proposition}[Arbitrary independent splitting]\label{cr:splitting}
+Suppose $W=0$ and a loan $(\ell,d)$ may be split into $n$ independently repayable loans $(\ell/n,d/n)$ for every positive integer $n$. If the resulting book must remain safe when any subset of the other loans is fully repaid and its released tokens are redeemed, then $d\le\Pf\ell$.
+\end{proposition}
+\begin{proof}
+Leave one of the $n$ loans outstanding and repay all others. \Cref{cr:kernel} requires $d/n\le R(\ell/n)$. Hence $d/\ell\le R(\ell/n)/(\ell/n)$ for every $n$, whose limit is $\Pf$.
+\end{proof}
+
+There is consequently no gain from the curve premium while retaining all three properties: no committed reserve, arbitrary proportional splitting, and independent repayment and exit. A pool can obtain more credit only by changing one of those properties. Nor is the gain universal across borrowers: on a stepped curve, $R(\ell)=\Pf\ell$ for $\ell\le S_0$, so small positions entirely within the floor capacity obtain no extra credit from \eqref{cr:fullrelease}.
+

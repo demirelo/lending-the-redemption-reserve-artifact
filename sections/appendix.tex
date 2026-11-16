@@ -1,0 +1,56 @@
+\section{Differences from the Earlier Paper}\label{app:errata}
+
+This appendix lists where the statements of this paper differ from those of \vone. Section and equation numbers refer to Cryptology ePrint Archive paper 2026/483, the version received on 8 March 2026.
+
+\begin{enumerate}[leftmargin=2em,itemsep=4pt]
+\item \textbf{Reconfiguration (Definition~3.5).} The definition lists reserve equality, a bounded spot-price loss and a cumulative budget; that the floor price does not fall appears as an onchain precondition of Proposition~3.4. Here it is part of the guard, (G1), because solvency depends on it (\cref{ex:reconf}).
+\item \textbf{Loan invariant (Theorem~4.2).} The bound $d\le\gamma\Pf\ell$ is stated there with the current $\gamma$. When $\gamma$ can be lowered, the bound that persists is the one with the cap $\gbar$ (\cref{rem:gamma}). The induction here also covers rebalancing, as \op{Borrow} with $\ell^+=0$.
+\item \textbf{Structure of the proofs.} The earlier paper states coverage, floor monotonicity and loan safety separately, with references between them. \Cref{thm:safety} proves them together by one induction over all operations.
+\item \textbf{Borrowing and liquidity (Section~4.1).} By \cref{thm:safety}(c), a borrow whose guard holds does not fail for lack of cash.
+\item \textbf{Leverage example (Section~4.5).} The table there lists the net proceeds of each loan. With the fees included, the outstanding debt for an initial capital of $1{,}000$, $\gamma=0.9$ and $\phi=0.03$ is $7{,}086.61$ (\cref{tab:loop}). \Cref{prop:lev} gives a leverage bound that does not assume a fixed floor or one loan per purchase.
+\item \textbf{Sandwich condition (Equation~20).} The condition $\Delta p<2fp_j$ concerns one price step. \Cref{prop:sandwich} treats orders that cross several steps (\cref{ex:sandwich}).
+\item \textbf{Interest (Section~4.1).} The earlier paper excludes interest. Capped accrual is also compatible with liquidation-free credit (\cref{prop:carry}).
+\item \textbf{Dormant loans (Section~5.6).} A third-party repayment after a period of inactivity needs the borrower's prior consent to fit \cref{def:liqfree}; \cref{sec:incentives} lists alternatives.
+\item \textbf{Gross and net floor.} Redemption ``at or above the floor'' refers to the curve return before the sell fee (\cref{prop:net}).
+\item \textbf{Discrete and continuous curves (Section~3.6).} The safety results do not depend on discreteness; they hold for every non-decreasing schedule.
+\item \textbf{Dynamic fees (Section~5.7).} The size multiplier is computed from the previous trade (\cref{sec:extraction}). The present paper does not rely on the fee simulation study.
+\end{enumerate}
+
+\section{Formal Statements}\label{app:lean}
+
+The file \texttt{lean/Safety.lean} states the following, in the namespace \texttt{FloorCredit}. We give each statement in the notation of the paper, with the name it has in the file.
+
+\begin{description}[leftmargin=1.2em,itemsep=3pt]
+\item[\texttt{Sched R Pf C}] (hypothesis on the reserve function). $\Pf>0$, $C>0$, $R(0)=0$, and $R(b)-R(a)\ge\Pf\,(b-a)$ for all $0\le a\le b\le C$. Nothing else is assumed about $R$; in particular $p$ need not be monotone.
+\item[\texttt{State}, \texttt{Valid}, \texttt{Inv}.] A state is $(R,\Pf,C,S,A,\gamma,h,\ell,d)$ with $h,\ell,d$ indexed by a finite set of accounts. \texttt{Valid} is: \texttt{Sched}; $0\le S\le C$; $A\ge0$; $0<\gamma\le\gbar$; $h_u,\ell_i,d_i\ge0$. \texttt{Inv} is \texttt{Valid} together with (J1) $\sum_uh_u+\sum_i\ell_i=S$, (J2) $d_i\le\gbar\Pf\ell_i$ for every $i$, and (J3) $R(S)\le A+\sum_id_i$.
+\item[\texttt{Step}.] The relation between a state and its successor under one operation whose guard holds: buy, sell, borrow, full repayment, partial repayment with any release $u\ge0$ such that $u\,d_i\le\ell_i\,r$, transfer of free tokens between two distinct accounts, change of $\gamma$, reshape with (G1) and (G2), skim, and capped accrual.
+\item[\texttt{coverage}.] If \texttt{Inv} holds, $\gbar\ge0$ and $0\le x\le S-L$, then $R(S)-R(S-x)+(1-\gbar)R(L)\le A$.
+\item[\texttt{sell\_payable}, \texttt{borrow\_payable}, \texttt{skim\_payable}.] If \texttt{Inv} holds and $0\le\gbar\le1$: a holder's sale of $0<x\le h_u$ satisfies $R(S)-R(S-x)\le A$; a loan $b$ whose guard holds satisfies $b\le A-(1-\gbar)R(S)$; a skim whose guard holds satisfies $w\le A$.
+\item[\texttt{inv\_empty}.] The empty state with a \texttt{Sched} reserve function and $0<\gamma\le\gbar$ satisfies \texttt{Inv}.
+\item[\texttt{step\_preserves}.] If $0<\gbar\le1$, \texttt{Inv} holds in $s$ and \texttt{Step} relates $s$ to $s'$, then \texttt{Inv} holds in $s'$.
+\item[\texttt{reach\_inv}, \texttt{reach\_sell\_payable}.] If $0<\gbar\le1$ and \texttt{Inv} holds in $s_0$, then \texttt{Inv} holds in every state reachable from $s_0$ by finitely many steps, and in every such state every sale of free tokens satisfies $R(S)-R(S-x)\le A$.
+\item[\texttt{sched\_of\_integral}.] If $C>0$, $p$ is non-decreasing on $[0,C]$ and $p\ge\Pf>0$ there, then $R(x)=\int_0^xp$ satisfies \texttt{Sched}.
+\end{description}
+
+From the directory \texttt{lean/}, \texttt{lake build} checks the file with the pinned toolchain and Mathlib revision. Our run used \texttt{lake env lean Safety.lean} in a project with the same toolchain and the same Mathlib revision; it ends without output, and \texttt{\#print axioms} reports \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound} for the last three theorems.
+
+\section{Reproduction}\label{app:repro}
+
+The supplementary material contains the following. \artifactlocation{} The Python scripts need Python~3 and no packages.
+
+\begin{sloppypar}
+\begin{itemize}
+\item \texttt{scripts/dabc\_model.py} is the reference model.
+\item \texttt{python3 -I scripts/credit\_frontier.py} runs the exact-rational examples, envelope comparisons, capacity-boundary checks, nonlinear-release paths, subset tests and directed mutations for \cref{sec:credit}. It does not invoke Lean or Solidity.
+
+\item \texttt{python3 -I scripts/test\_model.py 20000 300} runs the directed and randomized tests of \cref{tab:tests} and the two property tests, and exits with a non-zero status if the specified mechanism violates a checked property or if a seeded defect goes undetected. It takes a few minutes on one core.
+\item \texttt{python3 -I scripts/numbers.py} prints the mechanism calculations quoted in the text, in blocks labeled N01 to N17, and writes the data files for \cref{fig:raise,fig:regions,fig:sandwich}.
+\item \texttt{python3 -I scripts/make\_macros.py outputs/test\_run.txt sections/testnums.tex} converts the saved test output into the numbers of \cref{sec:evidence}.
+\item \texttt{lean/Safety.lean} is the formal proof of \cref{thm:safety}. With Lean~4 (toolchain \texttt{v4.31.0}) and the Mathlib revision pinned in \texttt{lean/lakefile.toml}, \texttt{lake build} checks it.
+\item \texttt{contracts/} is a Foundry project with the Solidity implementation. \texttt{forge test} runs the directed, invariant and differential tests. \texttt{python3 -I scripts/gen\_differential.py 150 200 > contracts/test/Differential.t.sol} regenerates the differential test from the reference model.
+\item \texttt{python3 -I empirics/fetch.py 26414400} downloads the event logs used in \cref{sec:empirics} from a public Ethereum endpoint, \texttt{empirics/supply.py} reads the token supplies, \texttt{empirics/endpoint.py} reads each pool's state from the contract at the last block, and \texttt{python3 -I empirics/analyze.py} prints the results and writes the numbers and the table rows of that section. The raw logs are included.
+\item \texttt{python3 -I empirics/rewards.py} reconciles fee allocations, reports claims as a separate series, conservatively matches distributions to fee-bearing events, and regenerates \texttt{sections/rewardnums.tex}. It uses the included raw data and makes no network calls.
+\end{itemize}
+\end{sloppypar}
+
+The random number generators are seeded, so the counts in \cref{tab:tests} and the differential traces are reproduced exactly.

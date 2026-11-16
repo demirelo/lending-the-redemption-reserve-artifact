@@ -1,0 +1,125 @@
+\section{Extraction}\label{sec:extraction}
+
+\Cref{thm:safety} protects the reserve. It does not protect a trader from other traders. A mint-and-burn curve has a deterministic price path, and anyone who can order transactions can trade along it. This section analyzes two strategies that need nothing but the primary curve, and three smaller points.
+
+Throughout, a buyer pays $(1+f_b)$ times the curve cost and a seller receives $(1-f_s)$ times the curve return, with constant rates $f_b\ge0$ and $0\le f_s<1$. (If the buy fee is instead deducted from the amount paid in, at rate $f$, set $1+f_b=1/(1-f)$.) The \emph{round-trip fee factor} is
+\[
+\kappa=\frac{1+f_b}{1-f_s}.
+\]
+A token unit bought at price $q$ and sold at price $q'$ makes a profit before transaction costs exactly when $q'/q>\kappa$.
+
+\subsection{Sandwiching a buyer on the primary curve}\label{sec:sandwich}
+
+At supply $S$ a victim is about to buy $w>0$ tokens. An attacker buys $a>0$ tokens first and sells them immediately after the victim's purchase, where $S+a+w\le C$. Let $\chi\ge0$ be the attacker's transaction cost.
+
+\begin{proposition}[Sandwich profit]\label{prop:sandwich}
+The attacker's profit is
+\begin{equation}\label{eq:sandwich}
+\Pi(a,w)=\int_0^a\Bigl[(1-f_s)\,p(S+w+u)-(1+f_b)\,p(S+u)\Bigr]du\;-\;\chi ,
+\end{equation}
+and a sandwich of the order $w$ is profitable exactly when $\Pi(a,w)>0$ for some admissible $a$. Two sufficient conditions follow.
+\begin{enumerate}[label=(\alph*)]
+\item If $p(x+w)\le\kappa\,p(x)$ for all $x\in[S,S+a)$, then $\Pi(a,w)\le -\chi$.
+\item If $S+w<C$ and $p(S+w)>\kappa\,p(S)$, there is an $a>0$ with $\Pi(a,w)+\chi>0$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+The attacker pays $(1+f_b)[R(S+a)-R(S)]$ and, after the victim has moved the supply to $S+a+w$, receives $(1-f_s)[R(S+a+w)-R(S+w)]$. Writing both differences as integrals of $p$ gives \eqref{eq:sandwich}. In (a) the integrand is non-positive. In (b) the integrand is positive at $u=0$ and right-continuous, hence positive on some interval $[0,\varepsilon)$.
+\end{proof}
+
+No secondary market is involved: the attacker enters and leaves through the issuer. The quantity that matters is the ratio $p(x+w)/p(x)$ by which a shift of size $w$ moves the price, \emph{along the whole stretch of the curve the attacker buys}, compared with $\kappa$. Condition (b) is not necessary: an attacker can also profit by buying up a cheap stretch so that the victim is pushed onto an expensive one, even when the victim's order alone would not have moved the price.\footnote{Ten tokens are priced $1$ and the following ones $100$; fees are $1\%$. A victim buying one token alone has a curve cost of $1$. If an attacker first buys the ten cheap tokens for $10.1$, the victim's curve cost is $100$, and the attacker redeems ten tokens for $0.99\times109=107.91$, a profit of $97.81$. With integer settlement the attacker pays $11$ and receives $107$. Script block N04b.}
+
+The condition $\Delta p<2fp$ of \citet{dabc2026} bounds the price ratio across one price step. A victim whose order crosses several steps moves the price by the product of the step ratios, which \cref{prop:sandwich} takes into account.
+
+\begin{example}\label{ex:sandwich}
+Steps of $1000$ tokens are priced $100,101,102,103$, with $f_b=f_s=1\%$, so $\kappa=1.0202$ and every step satisfies $\Delta p<2fp$. The attacker buys $1000$ tokens at $100$, the victim buys $3000$ tokens across the next three steps, and the attacker sells $1000$ tokens at $103$. The attacker pays $101{,}000$ and receives $101{,}970$, a profit of $970$ before transaction costs. If the victim buys only $1000$ tokens, the same attack loses $1{,}010$. Script block N04.
+\end{example}
+
+For a curve whose steps all have capacity $q$ and a constant price ratio $1+\beta$, a shift by $w$ crosses at most $\lceil w/q\rceil$ and at least $\lfloor w/q\rfloor$ step boundaries from any starting point. By \cref{prop:sandwich}, no sandwich of an order $w$ is profitable if $(1+\beta)^{\lceil w/q\rceil}\le\kappa$, and one is profitable before costs if $(1+\beta)^{\lfloor w/q\rfloor}>\kappa$. On such a curve the largest order that cannot be sandwiched is therefore about
+\[
+w^\ast\approx q\,\frac{\ln\kappa}{\ln(1+\beta)} ,
+\]
+which for small fees and steps is $q\,(f_b+f_s)/\beta$. \Cref{fig:sandwich} shows the threshold on the reference model. With $1\%$ steps and an order that covers $n$ whole steps, the attack first pays at $n=1$, $3$ and $7$ for fees of $0.3\%$, $1\%$ and $3\%$, which are the smallest $n$ with $1.01^n>\kappa$.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.78\textwidth,height=5.8cm,xlabel={victim order size (tokens)},ylabel={attacker profit},
+  xmin=0,xmax=12000,legend pos=north west,legend cell align=left,scaled ticks=false,
+  tick label style={font=\footnotesize},label style={font=\small},legend style={font=\footnotesize}]
+\addplot[thick,red!70!black,mark=*,mark size=1.2pt] table[x=victim,y=profit] {figures/sandwich_30.dat};
+\addlegendentry{$f_b=f_s=0.3\%$}
+\addplot[thick,blue!70!black,mark=square*,mark size=1.2pt] table[x=victim,y=profit] {figures/sandwich_100.dat};
+\addlegendentry{$f_b=f_s=1\%$}
+\addplot[thick,green!45!black,mark=triangle*,mark size=1.4pt] table[x=victim,y=profit] {figures/sandwich_300.dat};
+\addlegendentry{$f_b=f_s=3\%$}
+\draw[thin,black] (axis cs:0,0) -- (axis cs:12000,0);
+\end{axis}
+\end{tikzpicture}
+\caption{Profit before transaction costs of a sandwich with a fixed attacker size of $1000$ tokens on the reference model (integer settlement). The curve starts at price $1$ and its price rises by the factor $1.01$ every $1000$ tokens; the supply before the attack is at a step boundary and the victim buys a whole number of steps. The profit turns positive when the order crosses $1$, $3$ and $7$ steps respectively. Script block N04c.}\label{fig:sandwich}
+\end{figure}
+
+A sell order can be sandwiched symmetrically by an attacker who holds tokens: sell before the victim, buy back after; the same ratio decides.
+
+The available protections differ in what they achieve. A limit in the victim's own transaction, such as a minimum number of tokens received for the amount paid, bounds how far a front-run can move the victim's execution and therefore bounds the attacker's size and profit; it removes the attack only where no small front-run is profitable. A bound on the order size relative to the steps, $(1+\beta)^{\lceil w/q\rceil}\le\kappa$, removes it for a single order, but an attacker can sandwich a run of adjacent small orders as a whole. Private submission helps to the extent that the recipient does not itself reorder \citep{zhou2021hft,heimbach2022sandwich}. A condition on the size of a single step, without a bound on the order, protects only orders that stay within one step.
+
+\subsection{Minting just before a reshape}\label{sec:jit}
+
+When fees accumulate and are applied to the curve in discrete raises, the size and timing of the next raise are public. An attacker can mint immediately before it and redeem immediately after.
+
+\begin{proposition}[Mint, reshape, redeem]\label{prop:jit}
+At supply $S<C$ an attacker mints $a>0$ tokens, a reshape replaces $p$ by $p'$ at supply $S+a$, and the attacker redeems the $a$ tokens. The attacker's profit is
+\[
+\Pi=\int_0^a\Bigl[(1-f_s)\,p'(S+u)-(1+f_b)\,p(S+u)\Bigr]du-\chi .
+\]
+\begin{enumerate}[label=(\alph*)]
+\item If $p'(x)\le\kappa\,p(x)$ for all minted positions $x<S+a$, then $\Pi\le-\chi$. For a floor raise by water-filling to a level $y$, this holds whenever $y\le\kappa\,\Pf$.
+\item Let $S>0$, let the reshape be a floor raise by water-filling with a fixed budget $c>0$, and let $y_0$ be the level it would reach at supply $S$ without the attacker. If $y_0>\kappa\,p(S)$, there is an $a>0$ with $\Pi+\chi>0$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+The attacker pays $(1+f_b)[R_p(S+a)-R_p(S)]$ and receives $(1-f_s)[R_{p'}(S+a)-R_{p'}(S)]$, which gives the formula. (a) The integrand is at most $[(1-f_s)\kappa-(1+f_b)]\,p(S+u)=0$. After water-filling, $p'(x)=\max\{p(x),y\}\le\max\{p(x),\kappa\Pf\}\le\kappa\,p(x)$ because $p\ge\Pf$. (b) Let $y(a)$ be the level reached at supply $S+a$. The lift cost at supply $S+a$ exceeds the lift cost at supply $S$ by $\int_0^a\pos{y-p(S+u)}du$, which tends to zero uniformly on bounded sets of levels as $a\downarrow0$, so $y(a)\to y_0$. The integrand at $u$ is $(1-f_s)\max\{p(S+u),y(a)\}-(1+f_b)\,p(S+u)$, and by right-continuity of $p$ it tends to $(1-f_s)\,y_0-(1+f_b)\,p(S)>0$ as $a\downarrow0$, uniformly in $u\in[0,a)$.
+\end{proof}
+
+The attack needs the reshape to carry prices \emph{past the price at which the attacker minted}, by more than the fee factor. For a floor raise the condition is on the level reached relative to the marginal price, $y_0>\kappa\,p(S)$. A market at or near the floor with an accumulated budget satisfies it easily; a marginal price far above the floor does not rule it out if the budget is large enough.
+
+\begin{example}
+The floor is $1.00$ and all $1000$ tokens are priced at it; the next steps are $100$ tokens each at $1.1,1.2,\dots$; fees are $3\%$; a budget of $300$ has accumulated. Without interference the raise lifts the floor to $1.300$. An attacker who first mints $100$ tokens at $1.1$ pays $113.3$; the raise now reaches only $1.282$ because the budget is spread over more tokens; the attacker redeems for $124.3$ and gains $11.0$, and every other holder's floor is $0.018$ lower than it would have been. With integer settlement the amounts are $114$, $124$ and $10$. Script block N05.
+\end{example}
+
+Part~(a) gives a remedy for a single reshape: if no minted unit is repriced upward by more than the factor $\kappa$, minting before the reshape cannot pay. The guard has to cover every operation that can reprice minted units, not only the floor raise. In the reference model it is applied to every reshape (\cref{sec:evidence}). The guarantee is for one reshape. Several capped reshapes in sequence can exceed $\kappa$ cumulatively, so the cap needs a rule in time. A minimum spacing between calls is the obvious rule and is wrong when anyone may raise the floor: a caller who raises by a negligible amount starts the waiting period and blocks every larger raise until it ends, at no cost beyond the transaction. The implementation of \cref{sec:solidity} uses a budget in time instead. Time is divided into epochs of a fixed length $E$. Any number of raises may be made in an epoch, and together they may lift the floor to at most $\kappa$ times a reference price: the floor at the start of the previous epoch if that epoch had a curve change, and the floor at the start of the current epoch otherwise. A small raise then uses a small part of the budget and blocks nothing.
+
+The look-back to the previous epoch is necessary. A budget that restarted at every boundary would be beaten at the boundary: raise to the cap in the last block of one epoch and again in the first block of the next, a repricing of $\kappa^2$ within two blocks, and a position at the floor has no downside while it waits. With the look-back, raises on both sides of a boundary share one budget, and the bound holds for every minted position and not only for the floor.
+
+\begin{lemma}[Repricing over a window]\label{lem:window}
+Let $E>0$, and let the supply be positive throughout an interval $[t-E,t]$. Write $p_\tau$ for the schedule at time $\tau$. Then for every position $x$ below the smallest supply in the interval,
+\[
+p_t(x)\;\le\;\kappa\,p_{t-E}(x),
+\]
+whatever raises and replacements are made in the interval. In particular $\Pf(t)\le\kappa\,\Pf(t-E)$.
+\end{lemma}
+\begin{proof}
+The interval meets at most two adjacent epochs; let $t$ lie in epoch $n$. Below the smallest supply only two operations change prices. A raise to the level $y$ replaces $p(x)$ by $\max\{p(x),y\}$, and $y$ is at most $\kappa$ times its reference price. A replacement satisfies $p'(x)\le\kappa p(x)$, is the first curve change of its epoch, and requires that the previous epoch had no curve change; no raise may follow it in the same epoch. Retirement of capacity changes prices only at positions that are not minted.
+
+The reference price of a raise in epoch $n$ is the floor at the start of epoch $n-1$ if that epoch had a change, and otherwise the floor at the start of epoch $n$, which then equals the floor throughout epoch $n-1$. In both cases it is at most $\Pf(t-E)$, because $t-E$ lies in epoch $n-1$ and the floor never falls. The same holds for a raise in epoch $n-1$, whose reference is the floor at the start of epoch $n-2$ or $n-1$.
+
+If there is no replacement in the interval, every raise has a level $y\le\kappa\Pf(t-E)\le\kappa p_{t-E}(x)$, and $p_t(x)$ is the larger of $p_{t-E}(x)$ and the largest such level. If there is a replacement in epoch $n$, epoch $n-1$ had no change and no raise follows in epoch $n$, so the replacement is the only change and the bound is its own. If there is a replacement in epoch $n-1$, at a time $r\ge t-E$, it is the first change of that epoch and nothing follows it there, so $p_r(x)\le\kappa p_{t-E}(x)$ and the floor at $t-E$ is the floor at the start of the epoch. Epoch $n$ then admits no replacement, and its raises have that floor as reference, so their levels are at most $\kappa\Pf(t-E)\le\kappa p_{t-E}(x)$. Taking the maximum preserves the bound.
+\end{proof}
+
+A path that mints, waits through raises and replacements, and redeems within a window of length $E$ therefore cannot pay, by part~(a) of \cref{prop:jit} applied to the composite repricing. The statement is about repricing only: purchases by others inside the window move the price along the curve, and the sandwich profits of \cref{prop:sandwich} are unaffected by the cap. An agent who holds for longer than $E$ carries the price exposure of any holder in the meantime; we make no claim that this is unprofitable. If $E=0$, every call is its own window and there is no bound over time at all: $n$ raises in one transaction can reprice by $\kappa^n$. The differential test uses $E=0$ to compare the contract with the reference model, which has no clock, and so do the directed tests that do not concern time; a deployment needs $E>0$.
+
+Three limits remain. A schedule replacement by the governing authority must be the first curve change of its epoch, and the epoch before it must have had none. Raises may follow a replacement in the next epoch, and then share the cap with it: after a replacement that lifts the floor by $1\%$ just before a boundary, a raise just after the boundary can reach $\kappa$ times the floor before the replacement and no more. Because of the first condition  a caller who raises in every epoch can delay a replacement, and since anyone may add reserve to the surplus, the caller can pay in what the smallest effective raise costs, as long as the supply is positive and the cap leaves room. A design that must guarantee the authority a slot has to reserve one that raises cannot use. Second, when a redemption of the whole supply retires the floor step, the next step becomes the floor, above the reference price; the reference is then reset to the new floor, which is safe because no token is outstanding; the inequality above does not span such a reset. Third, the cap is one-sided. A replacement that lowers prices above the floor is constrained only by (G1) and (G2): a holder who learns of it in advance can redeem before it and mint again after it, at the expense of those who stay. The model gives the authority that power, \cref{sec:reconf} measures what it moves, and no guard in this paper bounds it. Applying each fee to the floor in the transaction that pays it removes the accumulated budget and with it the discrete event; we do not claim that it removes every ordering strategy around other users' fee payments.
+
+\subsection{Fees that depend on the previous trade}
+
+A fee that is a function of state left behind by earlier trades can be steered by whoever trades first. The size multiplier of \vone{} (their Equation~18) is computed from the size of the \emph{most recent} trade relative to supply, lagged by one trade. A trader who faces a high multiplier can precede the intended trade with a minimal one, which resets the multiplier, and the large trade then sets a high multiplier for whoever comes next. A size penalty is harder to steer when it is computed from the size of the trade it is charged on. More generally, when the fee at execution can differ from the fee at signing, the transaction should carry a maximum fee or a minimum output.
+
+\subsection{The secondary market}\label{sec:secondary}
+
+Suppose the token also trades on a secondary venue at a price $P_{\mathrm{sec}}$, and that marginal amounts can be traded on both venues at a proportional cost $c_a$ per token for the round trip. Then, as long as free tokens exist ($S>L$), a price $P_{\mathrm{sec}}<(1-f_s)\,p(S^-)-c_a$ offers an arbitrage: buy on the secondary venue and redeem. \Cref{cor:redeem} guarantees that the redemption leg can be executed. As long as mint capacity remains ($S<C$), a price $P_{\mathrm{sec}}>(1+f_b)\,p(S)+c_a$ offers the opposite arbitrage. Between these two bounds there is no arbitrage force toward either edge. For trades of finite size the bounds are the corresponding average curve prices, and the depth of the secondary venue enters.
+
+Consider the lower bound. In the absence of arbitrage the secondary price is not bounded below by the gross floor $\Pf$ but only by a quantity that can be as low as the net floor less costs, $(1-\fsbar)\Pf-c_a$. A secondary price below $\Pf$ by up to the sell fee is therefore consistent with a correctly functioning mechanism, and nothing in the mechanism pulls it back to $\Pf$. We make no claim about how fast a price outside the band returns to it; that depends on the capital and the costs of arbitrageurs.
+
+\subsection{Governance}
+
+The guards (G1) and (G2) bound what a reshaping authority can do to safety: nothing. They do not bound redistribution; that is the role of a limit on the exit distortion $\Delta$ (\cref{sec:reconf}), and such a limit is only as strong as the rule for resetting it. \op{Skim} is limited to the surplus. Any privileged function outside these operations, such as one that sets a reserve counter directly, is outside the model, and the theorem says nothing about a system that has one.

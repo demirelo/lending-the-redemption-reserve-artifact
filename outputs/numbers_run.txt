@@ -1,0 +1,153 @@
+
+== [N01] leverage loop, C0=1000, gamma=0.90, phi=0.03, buy at the floor, no trade fee
+eta = 0.873  purchases = tokens*Pf = 7874.02
+gross debt = 7086.61  origination fees = 212.6  net proceeds reinvested = 6874.02
+equity at floor = tokens*Pf - debt = 787.4  = C0 - fees = 787.4
+exposure multiple 1/(1-eta) = 7.874  floor-value/equity = 1/(1-gamma) = 10.0
+v1 off-by-one: 1 + sum_{i>=0} eta^i = 8.874
+loop check (2000 rounds): tokens 7874.02 debt 7086.61 fees 212.6
+with trade fee f_b=1% and premium pi=1.25: eta = 0.6915  multiple = 3.241
+  gamma=0.9 phi=0.03: eta=0.8730 multiple=7.87 floor-value/equity=10.00 fees/C0=0.213
+  gamma=0.9 phi=0.04: eta=0.8640 multiple=7.35 floor-value/equity=10.00 fees/C0=0.265
+  gamma=0.85 phi=0.03: eta=0.8245 multiple=5.70 floor-value/equity=6.67 fees/C0=0.145
+  gamma=0.8 phi=0.03: eta=0.7760 multiple=4.46 floor-value/equity=5.00 fees/C0=0.107
+  gamma=0.95 phi=0.03: eta=0.9215 multiple=12.74 floor-value/equity=20.00 fees/C0=0.363
+
+== [N02] break-even holding horizon T* = ln(1/(1-phi))/r
+  phi=0.03 r=0.05: T* = 0.609 years = 7.3 months
+  phi=0.02 r=0.05: T* = 0.404 years = 4.8 months
+  phi=0.03 r=0.1: T* = 0.305 years = 3.7 months
+  phi=0.01 r=0.04: T* = 0.251 years = 3.0 months
+
+== [N03] exit routing at the floor: borrow-and-abandon vs redeem (per unit of floor value)
+  borrow-and-abandon cash = 0.873
+  sell fee 0.010: redeem cash = 0.990  -> REDEEM
+  sell fee 0.030: redeem cash = 0.970  -> REDEEM
+  sell fee 0.075: redeem cash = 0.925  -> REDEEM
+  sell fee 0.100: redeem cash = 0.900  -> REDEEM
+  sell fee 0.127: redeem cash = 0.873  -> BORROW-AND-ABANDON
+  sell fee 0.150: redeem cash = 0.850  -> BORROW-AND-ABANDON
+  sell fee 0.225: redeem cash = 0.775  -> BORROW-AND-ABANDON
+  threshold sell fee = 1 - gamma(1-phi) = 0.127
+
+== [N04] primary-curve sandwich, steps 100,101,102,103 (1000 tokens each), fees 1%/1%
+  attacker pays 101000 receives 101970 profit 970 (per token 0.97 )
+  v1 local condition dp < 2 f p holds on every step: True
+  kappa = (1+fb)/(1-fs) = 1.0202  victim price ratio = 1.03
+  victim moves 100->101 only (ratio 1.01 < kappa): attacker profit -1010
+  [N04b] the victim's own price ratio is not necessary: price 1 on 10 tokens, then 100
+    integer settlement: victim alone pays 2 ; after the front-run the victim pays 101 ; attacker pays 11 receives 107 profit 96
+    real-valued: attacker pays 10.1 receives 107.91 profit 97.81 ; victim's curve cost 1 -> 100
+  [N04c] geometric curve, step ratio 1.01, 1000 tokens per step; supply at a step boundary;
+         attacker size fixed at 1000 tokens (one step)
+    fee=30bps kappa=1.00602: smallest n with 1.01^n > kappa is n=1
+      first victim size (whole steps) with positive attacker profit: 1000
+    fee=100bps kappa=1.02020: smallest n with 1.01^n > kappa is n=3
+      first victim size (whole steps) with positive attacker profit: 3000
+    fee=300bps kappa=1.06186: smallest n with 1.01^n > kappa is n=7
+      first victim size (whole steps) with positive attacker profit: 7000
+
+== [N05] minting just before a floor raise (market at the floor), integer settlement, fees 3%
+  lift cap=False: floor without attacker 1.3000, with attacker 1.2818; attacker paid 114 got 124 profit 10
+  lift cap=True : floor without attacker 1.0619, with attacker 1.0619; attacker paid 114 got 106 profit -8
+  real-valued: pays 113.3 receives 124.336
+
+== [N06] reconfiguration without the floor guard (v1 Def. 3.5): prices (10,30) -> (8,32)
+  before: A = 31 D = 9 R(S) = 40 violations: []
+  after : floor = 8  debt 9 vs floor value of lock 8 ; free token claims 32 vs cash 31  violations: ['J2 loan cover', 'coverage']
+  sell by the unlocked holder -> INSUFFICIENT RESERVE
+  with the guard the same call -> FLOOR DECREASE
+
+== [N07] lock rounding: floor (public v1 harness) vs ceil (specification)
+  debt=3 price=2 LTV=90%: lock floor=1 (borrowing power 1, floor value 2) | lock ceil=2 (borrowing power 3)
+  debt=1000001 price=1 LTV=90%: lock floor=1111112 (borrowing power 1000000, floor value 1111112) | lock ceil=1111113 (borrowing power 1000001)
+  debt=1 price=100 LTV=90%: lock floor=0 (borrowing power 0, floor value 0) | lock ceil=1 (borrowing power 90)
+  debt=101 price=1 LTV=80%: lock floor=126 (borrowing power 100, floor value 126) | lock ceil=127 (borrowing power 101)
+
+== [N08] tightness: per-token debt cap above the floor breaks coverage
+  spot-anchored loan: debt 180 on 100 tokens of floor value 100; violations: ['J2 loan cover', 'coverage']
+  A = 120  claims of free supply = 200
+  the unlocked holder redeems -> INSUFFICIENT RESERVE
+
+== [N09] miscellaneous
+  v1 Scenario 3: 0.045*100000/200 = 22.5 blocks = 4.5 minutes at 12 s
+  capped interest: gamma=0.80, cap factor 1.10 -> worst ratio 0.8800000000000001
+  net floor with sell-fee cap 3%: 0.97  design rule gamma + f_s < 1: 0.90+0.03 = 0.93
+  kappa(1%,1%) = 1.0202  kappa(3%,3%) = 1.0619  kappa(0.3%,0.3%) = 1.006
+  collateral-netted close feasible iff gamma <= 1 - f_s: gamma=0.90, f_s=0.03 -> residual per unit floor value 0.07
+
+== [N10] figure data written to figures/*.dat
+  floor after injecting 1500 into supply 7500: 1.34  floor capacity: 5000  surplus left: 0
+  ok
+
+== [N11] floor economy: lock share, growth rate, revenue-maximising fee (exponential horizons)
+  phi=0.01 rho=0.05 tau=1.0: T0=2.4 months, lock share U=0.982
+  phi=0.03 rho=0.05 tau=1.0: T0=7.3 months, lock share U=0.875
+  phi=0.01 rho=0.05 tau=0.5: T0=2.4 months, lock share U=0.938
+  phi=0.03 rho=0.05 tau=2.0: T0=7.3 months, lock share U=0.962
+  Monte Carlo lock share (phi=0.03, rho=0.05, tau=1): 0.875 vs formula 0.875
+  Monte Carlo E[(T-T0)^+]: 0.544 vs tau*exp(-T0/tau) = 0.544
+  growth g* with alpha=0.5, fb=fs=1%, phi=3%, gamma=0.9, rho=5%, tau=1: 0.0175 per year
+  growth g* with alpha=1.0, fb=fs=1%, phi=3%, gamma=0.9, rho=5%, tau=1: 0.0352 per year
+  growth g* with alpha=1, fb=fs=0, phi=1%, gamma=1, rho=5%, tau=1: 0.0082 per year
+  revenue-maximising fee: rho=0.05 tau=1.0: phi*=0.0476 (grid search 0.0476); lock share at phi* = 0.745; T0/tau = 0.976
+  revenue-maximising fee: rho=0.05 tau=2.0: phi*=0.0909 (grid search 0.0909); lock share at phi* = 0.753; T0/tau = 0.953
+  revenue-maximising fee: rho=0.1 tau=1.0: phi*=0.0909 (grid search 0.0909); lock share at phi* = 0.753; T0/tau = 0.953
+  limit of the lock share at phi* as rho*tau -> 0: 2/e = 0.736
+
+== [N12] entry value of a buyer in the floor economy (cash-only preferences)
+  parameters: rho=0.05 tau=1.0 phi=0.03 gamma=0.9 fb=fs=0.01 alpha=1.0; T0=0.609184 g*=0.0351993
+  V(1) = -0.01753496: purchase and redemption -0.03454483, first loan 0.01689352, top-ups 0.00011635
+    V(0.3) = -0.02439
+    V(1) = -0.01753
+    V(2) = +0.01121
+    V(3) = +0.03954
+    V(5) = +0.09495
+    V(10) = +0.22650
+  horizon at which V changes sign: 1.608 years; share of arriving tokens with V < 0: 0.800
+  mean entry value E[V(T)] by numerical integration: -0.011049
+  stationary debt per unit of arrivals D_n = 0.78439, cash A_n = S - D_n = 0.21561, continuation value of current holders X = 0.23371
+  identity: -(g A_n) - (rho - g) X = -0.011049  (mean V above: -0.011049)
+  flow benefit per token-year that makes the mean entry value zero: 0.01160 of the floor price (E[(1-e^(-rho T))/rho] = 0.9524)
+
+== [N13] issuer's present value of a loan when the reserve could earn the rate r_I
+  r_I=0.0: loan of horizon 1, fee 3%: issuer PV per unit of debt = +0.0300000
+  r_I=0.02: loan of horizon 1, fee 3%: issuer PV per unit of debt = +0.0101987
+  r_I=0.05: loan of horizon 1, fee 3%: issuer PV per unit of debt = -0.0187706
+  r_I=rho: net lending value per arriving token and unit of gamma at fee 0.01: -0.038558 (gross fee flow 0.008179)
+  r_I=rho: net lending value per arriving token and unit of gamma at fee 0.03: -0.025118 (gross fee flow 0.016314)
+  r_I=rho: net lending value per arriving token and unit of gamma at fee 0.0476: -0.017100 (gross fee flow 0.017947)
+  r_I=rho: net lending value per arriving token and unit of gamma at fee 0.2: -0.000439 (gross fee flow 0.002306)
+  r_I=rho: net lending value per arriving token and unit of gamma at fee 0.5: -0.000000 (gross fee flow 0.000000)
+  r_I=0.0: fee that maximises the issuer's present value: closed form 0.04762, grid search 0.04762, value 0.017947; locked share at that fee 0.7447
+  r_I=0.02: fee that maximises the issuer's present value: closed form 0.07810, grid search 0.07810, value 0.005332; locked share at that fee 0.5165
+  r_I=0.03: fee that maximises the issuer's present value: closed form 0.11483, grid search 0.11483, value 0.001499; locked share at that fee 0.2999
+  r_I=0.04: fee that maximises the issuer's present value: closed form 0.21647, grid search 0.21647, value 0.000057; locked share at that fee 0.0447
+
+== [N14] linear price p(q) = P + k q: maximum debt with a committed buffer W against the redemption value R(L)
+  P=1.0 k=1.0 L=1.0: R(L) = 1.5; debt capacity exceeds R(L) when W > k L^2 / 8 = 0.125
+  W=0.05: D_max = 1.3162 (not above R(L))
+  W=0.1: D_max = 1.4472 (not above R(L))
+  W=0.125: D_max = 1.5000 (not above R(L))
+  W=0.2: D_max = 1.6325 (above R(L))
+  W=0.5: D_max = 2.0000 (above R(L))
+  W=0.8: D_max = 2.3000 (above R(L))
+
+== [N15] committed buffer: pro-rata envelope minus exact whole-position requirement, against max_i (d_i - Pf l_i)^+
+  3000 random books (1 to 6 loans, linear price, exact rationals): violations of 0 <= gap <= bound: 0; largest gap / bound: 0.2500
+  violations of the linear-price bound gap <= bound / 4: 0
+  step example, eps = 0.01, one loan (1, 2): R(1) = 2, W_whole = 0, W_prop = 0.99, floor excess = 1
+
+== [N16] R(q) = q + q^2/2, L = S = 1, W = 0.08: borrow at capacity, repay part, redeem the released part, abandon the rest
+  D_max = 1.4; W_min = max_q (1.4 q - R(q)) = 0.08 at q = 0.4; R(1) = 1.5
+  cash flows (buy, borrow, repay, redeem released): [-1.5, 1.4, -0.84, 1.02]; net = 0.08; issuer cash afterwards = 0.0
+  with buy, origination and sell fees of 1%: net = 0.0408
+  after repaying 1.12 (residual lock 0.2, debt 0.28): required buffer = 0.06, so 0.02 of the buffer can be withdrawn while the loan is open
+
+== [N17] p(q) = 1 + q, total lock L = 1: credit under the floor cap, a committed reserve, and a curve-valued lock
+  floor cap: aggregate credit 1.0; committed reserve W = 0.08: D_max = 1.4000 (+40%)
+  curve-valued lock of size 0.1: credit R(l) = 0.1050, gain over the floor value 5%
+  curve-valued lock of size 0.5: credit R(l) = 0.6250, gain over the floor value 25%
+  curve-valued lock of size 1.0: credit R(l) = 1.5000, gain over the floor value 50%
+  ten equal locks of 0.1: aggregate 1.0500; one lock of 1: 1.5000
+  unit lock at the limit 1.5, repay half the debt (0.75): released 0.4189 tokens (proportional rule: 0.5)

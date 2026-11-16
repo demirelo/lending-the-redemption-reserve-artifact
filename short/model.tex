@@ -1,0 +1,116 @@
+\section{The Floor-Cap Contract}\label{sec:model}
+
+Reserve amounts are in units of one reserve asset, token amounts in token units, and prices in reserve units per token. All amounts are real numbers, and $x^+=\max\{x,0\}$.
+
+\subsection{Price schedules and the reserve function}
+
+\begin{definition}[Price schedule]\label{def:schedule}
+A \emph{price schedule} with capacity $C\in(0,\infty)$ is a bounded, non-decreasing, right-continuous function $p:[0,C)\to(0,\infty)$. Its \emph{reserve function} is $R_p(x)=\int_0^x p(u)\,du$ for $0\le x\le C$, its \emph{floor price} is $\Pf=p(0)$, and its \emph{floor capacity} is $S_0=\sup\{x\in[0,C): p(x)=\Pf\}$.
+\end{definition}
+
+We write $R$ for $R_p$ when the schedule is clear. The issuer mints the token at position $x$ at price $p(x)$ and burns tokens from the top of the supply: taking the supply from $S$ to $S+x$ has \emph{curve cost} $R(S+x)-R(S)$, and taking it from $S$ to $S-x$ has \emph{curve return} $R(S)-R(S-x)$. Stepped, piecewise-linear and smooth curves are all instances. The discrete curves of \vone{} are step functions with $S_0>0$; a smooth increasing curve has $S_0=0$. A schedule without a finite capacity is covered by restricting it to supplies below any finite bound.
+
+\begin{lemma}\label{lem:R}
+For $0\le a<b\le C$: $p(a)\,(b-a)\le R(b)-R(a)\le p(b^-)\,(b-a)$, where $p(b^-)$ is the left limit. Consequently $R$ is increasing and convex; $R(b)-R(a)\ge \Pf\,(b-a)$ for $a\le b$; $R(x)\le \tfrac{x}{b}R(b)$ for $0\le x\le b$ with $b>0$; and $R(x)/x\to\Pf$ as $x\downarrow0$.
+\end{lemma}
+\begin{proof}
+The two bounds hold because $p$ is non-decreasing. $R$ is the integral of a non-decreasing function and is therefore convex; the chord bound is convexity with $R(0)=0$. The limit holds because $p$ is right-continuous at $0$.
+\end{proof}
+
+\subsection{State and operations}
+
+A \emph{state} consists of a schedule $p$, the supply $S\in[0,C]$, the reserve cash $A\ge 0$, the LTV policy $\gamma$, a free balance $h_u\ge0$ for each account $u$, and a set of loans. A loan $i$ is a record $(\ell_i,d_i)$ with $\ell_i>0$ tokens locked in the issuer's custody and debt $d_i>0$; an account without a record has no loan. We write $L=\sum_i\ell_i$ and $D=\sum_i d_i$. One constant is fixed at deployment and cannot be changed: the \emph{LTV cap} $\gbar\in(0,1]$. A state is \emph{valid} if these domain conditions hold and $0<\gamma\le\gbar$.
+
+An operation whose guard fails does nothing. Fees are deliberately left open: a fee may be retained in the reserve or paid to a third party. The operations are stated in terms of what enters and what leaves the reserve in total, so the statements below hold in both cases: an amount paid by a user to a third party never enters $A$, and an amount paid out of the reserve to a third party counts as part of the outflow.
+
+\begin{description}[leftmargin=1.2em,itemsep=3pt]
+\item[\op{Buy}$(u,x)$.] Guard: $x>0$, $S+x\le C$. An amount $c\ge R(S+x)-R(S)$ enters the reserve. Effect: $S\gets S+x$, $h_u\gets h_u+x$, $A\gets A+c$.
+\item[\op{Sell}$(u,x)$.] Guard: $0<x\le h_u$. An amount $o$ with $0\le o\le R(S)-R(S-x)$ leaves the reserve: the seller's receipt plus any fee paid out to a third party. Effect: $S\gets S-x$, $h_u\gets h_u-x$, $A\gets A-o$.
+\item[\op{Borrow}$(i,\ell^+,b)$.] Guard: $0\le \ell^+\le h_i$, $b>0$, and
+\begin{equation}\label{eq:ltv}
+d_i+b\;\le\;\gamma\,\Pf\,(\ell_i+\ell^+),
+\end{equation}
+where $(\ell_i,d_i)=(0,0)$ if $i$ has no loan. An amount $o$ with $0\le o\le b$ leaves the reserve: the borrower's receipt plus any fee paid out to a third party. Effect: $h_i\gets h_i-\ell^+$, $\ell_i\gets \ell_i+\ell^+$, $d_i\gets d_i+b$, $A\gets A-o$. This one operation covers origination, a top-up of debt against an existing lock ($\ell^+=0$), and an added lock. By \eqref{eq:ltv} the resulting record has $\ell_i>0$.
+\item[\op{Repay}$(i,r)$.] Guard: $i$ has a loan and $0<r\le d_i$. Effect: $A\gets A+r$. If $r=d_i$, all $\ell_i$ tokens are released, $h_i\gets h_i+\ell_i$, and the record is deleted. If $r<d_i$, then $d_i\gets d_i-r$ and $u$ tokens are released, $\ell_i\gets\ell_i-u$, $h_i\gets h_i+u$, where $u=\upsilon(\ell_i,d_i,r)$ for a fixed release rule $\upsilon$ that depends only on the loan and the repayment and satisfies $0\le\upsilon(\ell,d,r)\le \ell\,r/d$. The proportional rule $\upsilon=\ell r/d$ is the natural choice.
+\item[\op{Transfer}$(u,v,x)$.] Guard: $0<x\le h_u$, $v\ne u$. Effect: $h_u\gets h_u-x$, $h_v\gets h_v+x$. Only free tokens can be transferred; a lock is not transferable. A transfer to oneself changes nothing and is not an operation.
+\item[\op{SetLTV}$(\gamma')$.] Guard: $0<\gamma'\le\gbar$. Effect: $\gamma\gets\gamma'$.
+\item[\op{Reshape}$(p',c)$.] The schedule is replaced by a schedule $p'$ of capacity at least $S$, and $c\ge0$ of new reserve is paid in. Guards:
+\begin{align}
+&\text{(G1) floor guard:} && p'(0)\ \ge\ p(0), \label{eq:G1}\\
+&\text{(G2) funding guard:} && R_{p'}(S)\ \le\ A+c+D. \label{eq:G2}
+\end{align}
+Effect: $p\gets p'$, $A\gets A+c$. Raising the floor and every other change of the curve are instances. A pure inflow of reserve is the case $p'=p$.
+\item[\op{Skim}$(w)$.] Guard: $0<w\le A+D-R(S)$. Effect: $A\gets A-w$. This models retained fees leaving the issuer, for example to a treasury.
+\end{description}
+
+Where fees are charged they are proportional: a buy fee $f_b$ on the curve cost, a sell fee $f_s$ on the curve return, bounded by a cap $\fsbar<1$, and an origination fee $\phi<1$ deducted from the proceeds of a loan. The operations above allow any such fees, retained or paid out. Locked tokens cannot be sold or transferred, because \op{Sell} is guarded by the free balance and custody is exclusive. A loan may be reassigned to another owner; this changes no quantity below. Two kinds of operation are deliberately absent: none increases a debt without the borrower's action (the extended version treats capped interest), and none releases or removes locked tokens other than the borrower's own \op{Repay}.
+
+\subsection{The invariant}
+
+\begin{definition}[Safety invariant]\label{def:J}
+A valid state satisfies $\J$ if
+\begin{align}
+&\text{(J1) custody:} && \textstyle\sum_u h_u+L=S; \\
+&\text{(J2) loan cover:} && d_i\ \le\ \gbar\,\Pf\,\ell_i\quad\text{for every loan } i;\label{eq:J2}\\
+&\text{(J3) reserve adequacy:} && A+D\ \ge\ R(S).\label{eq:J3}
+\end{align}
+\end{definition}
+
+The quantity $W=A+D-R(S)\ge 0$ is the \emph{surplus}: reserve that backs no curve obligation, such as retained fees not yet used.
+
+\begin{theorem}[Safety]\label{thm:safety}
+\begin{enumerate}[label=(\alph*)]
+\item The empty state ($S=A=0$, no balances, no loans, $0<\gamma\le\gbar$) is valid and satisfies $\J$, and every operation whose guard holds maps a valid $\J$-state to a valid $\J$-state.
+\item In every valid $\J$-state, for every $x$ with $0\le x\le S-L$,
+\begin{equation}\label{eq:coverage}
+A\ \ge\ \bigl[R(S)-R(S-x)\bigr]+(1-\gbar)\,R(L).
+\end{equation}
+Hence every \op{Sell} whose guard holds can be paid its full curve return.
+\item In every valid $\J$-state, every \op{Borrow} whose guard holds satisfies $b\le A-(1-\gbar)R(S)$, and every \op{Skim} whose guard holds satisfies $w\le A$. Hence both can be paid in full.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(b) By (J3), (J2) summed over loans, and \cref{lem:R},
+\[
+A\ \ge\ R(S)-D\ \ge\ R(S)-\gbar\,\Pf L\ \ge\ R(S)-\gbar\,R(L)\ =\ \bigl[R(S)-R(L)\bigr]+(1-\gbar)R(L).
+\]
+Since $S-x\ge L$ and $R$ is increasing, $R(S)-R(L)\ge R(S)-R(S-x)$.
+
+(c) After a \op{Borrow} whose guard holds, loan $i$ satisfies $d_i\le\gamma\Pf\ell_i\le\gbar\Pf\ell_i$ and the other loans are unchanged, so the new totals satisfy $D+b\le\gbar\Pf L'\le\gbar R(L')\le\gbar R(S)$, where $L'=L+\ell^+\le S$ by (J1). With (J3), $A-b\ge R(S)-(D+b)\ge(1-\gbar)R(S)\ge0$. For \op{Skim}, $w\le A+D-R(S)\le A$ because $D\le\gbar R(S)\le R(S)$.
+
+(a) The empty state is valid and satisfies $\J$ trivially. We check each operation, writing primes for the new state. In each case validity is immediate from the guard and from (b) and (c), which show $A'\ge0$.
+
+\op{Transfer} changes two free balances by opposite amounts and nothing else. \op{Buy}: (J1) is immediate, (J2) is untouched because $p$ and the loans are unchanged, and $A'+D\ge A+D+R(S+x)-R(S)\ge R(S+x)$.
+
+\op{Sell}: (J1) holds by the guard $x\le h_u$. $A'+D=A-o+D\ge R(S)-[R(S)-R(S-x)]=R(S-x)$.
+
+\op{Borrow}: (J1) holds by the guard $\ell^+\le h_i$. (J2) holds for loan $i$ by \eqref{eq:ltv} and $\gamma\le\gbar$. $A$ falls by at most $b$ and $D$ rises by exactly $b$, so $A'+D'\ge A+D$.
+
+\op{Repay}: $A'+D'=A+D$, and (J1) holds because released tokens move from the lock to the free balance. If $r=d_i$ the record is deleted. Otherwise $d_i'=d_i-r>0$ and $\ell_i'=\ell_i-u\ge \ell_i(1-r/d_i)=\ell_i\,d_i'/d_i>0$, so $d_i'\le (d_i/\ell_i)\,\ell_i'\le\gbar\Pf\ell_i'$.
+
+\op{SetLTV}: only $\gamma$ changes, and it stays in $(0,\gbar]$.
+
+\op{Reshape}: (J1) is untouched. (J2) is preserved because debts and locks are unchanged and $\Pf'\ge\Pf$ by (G1). (J3) is (G2).
+
+\op{Skim}: $A'+D=A+D-w\ge R(S)$ by the guard.
+\end{proof}
+
+The proof uses the schedule only through $R(0)=0$ and $R(b)-R(a)\ge\Pf(b-a)$, that is, through $p\ge\Pf$; monotonicity of $p$ makes $R$ convex and is used from here on. The operation set is closed: the state changes only through the operations listed, and an implementation is an instance of the model only if it has no other way to change the state. The statement and its proof are formalized in Lean~4 (\cref{app:lean}).
+
+\subsection{What coverage requires}
+
+\begin{lemma}[Exact coverage condition]\label{lem:exact}
+In a valid state with (J1) and no surplus, $A+D=R(S)$, the curve return of the whole free supply can be paid if and only if $D\le R(L)$.
+\end{lemma}
+\begin{proof}
+The curve return of the free supply is $R(S)-R(L)$, and $A=R(S)-D$.
+\end{proof}
+
+So what coverage requires is an \emph{aggregate} bound: total debt must not exceed the reserve of the lowest $L$ units of the curve. Rule (J2) enforces it loan by loan through $\Pf\ell_i$, a quantity that depends on nothing but the loan itself. No larger uniform per-token cap works.
+
+\begin{proposition}[Tightness]\label{prop:tight}
+Fix any schedule and any number $\lambda>\Pf$. Replace the guard \eqref{eq:ltv} by $d_i+b\le\lambda\,(\ell_i+\ell^+)$. Then there is a reachable state, satisfying (J1) and (J3), in which the curve return of a free holder's \op{Sell} exceeds the cash $A$.
+\end{proposition}
+\begin{proof}
+Charge no fees. By \cref{lem:R} there is an $\ell>0$ with $R(\ell)<\lambda\ell$; choose it small enough that $\ell+y\le C$ for $y=(\lambda/\Pf-1)\,\ell$. From the empty state let account~1 buy $\ell$ tokens and then account~2 buy $y$ tokens, each at the curve cost. Then $A=R(\ell+y)\ge\Pf(\ell+y)=\lambda\ell$. Account~1 locks $\ell$ and borrows $\lambda\ell$, which is available. Now $A=R(\ell+y)-\lambda\ell<R(\ell+y)-R(\ell)$, which is the curve return of account~2's $y$ tokens.
+\end{proof}

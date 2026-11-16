@@ -1,0 +1,104 @@
+\appendix
+
+\section{Formal Statements}\label{app:lean}
+
+The file \texttt{lean/Safety.lean} states the following, in the namespace \texttt{FloorCredit}. We give each statement in the notation of the paper, with the name it has in the file.
+
+\begin{description}[leftmargin=1.2em,itemsep=3pt]
+\item[\texttt{Sched R Pf C}] (hypothesis on the reserve function). $\Pf>0$, $C>0$, $R(0)=0$, and $R(b)-R(a)\ge\Pf\,(b-a)$ for all $0\le a\le b\le C$. Nothing else is assumed about $R$; in particular $p$ need not be monotone.
+\item[\texttt{State}, \texttt{Valid}, \texttt{Inv}.] A state is $(R,\Pf,C,S,A,\gamma,h,\ell,d)$ with $h,\ell,d$ indexed by a finite set of accounts. \texttt{Valid} is: \texttt{Sched}; $0\le S\le C$; $A\ge0$; $0<\gamma\le\gbar$; $h_u,\ell_i,d_i\ge0$. \texttt{Inv} is \texttt{Valid} together with (J1) $\sum_uh_u+\sum_i\ell_i=S$, (J2) $d_i\le\gbar\Pf\ell_i$ for every $i$, and (J3) $R(S)\le A+\sum_id_i$.
+\item[\texttt{Step}.] The relation between a state and its successor under one operation whose guard holds: buy, sell, borrow, full repayment, partial repayment with any release $u\ge0$ such that $u\,d_i\le\ell_i\,r$, transfer of free tokens between two distinct accounts, change of $\gamma$, reshape with (G1) and (G2), skim, and capped accrual of debt, an operation of the extended version.
+\item[\texttt{coverage}.] If \texttt{Inv} holds, $\gbar\ge0$ and $0\le x\le S-L$, then $R(S)-R(S-x)+(1-\gbar)R(L)\le A$.
+\item[\texttt{sell\_payable}, \texttt{borrow\_payable}, \texttt{skim\_payable}.] If \texttt{Inv} holds and $0\le\gbar\le1$: a holder's sale of $0<x\le h_u$ satisfies $R(S)-R(S-x)\le A$; a loan $b$ whose guard holds satisfies $b\le A-(1-\gbar)R(S)$; a skim whose guard holds satisfies $w\le A$.
+\item[\texttt{inv\_empty}.] The empty state with a \texttt{Sched} reserve function and $0<\gamma\le\gbar$ satisfies \texttt{Inv}.
+\item[\texttt{step\_preserves}.] If $0<\gbar\le1$, \texttt{Inv} holds in $s$ and \texttt{Step} relates $s$ to $s'$, then \texttt{Inv} holds in $s'$.
+\item[\texttt{reach\_inv}, \texttt{reach\_sell\_payable}.] If $0<\gbar\le1$ and \texttt{Inv} holds in $s_0$, then \texttt{Inv} holds in every state reachable from $s_0$ by finitely many steps, and in every such state every sale of free tokens satisfies $R(S)-R(S-x)\le A$.
+\item[\texttt{sched\_of\_integral}.] If $C>0$, $p$ is non-decreasing on $[0,C]$ and $p\ge\Pf>0$ there, then $R(x)=\int_0^xp$ satisfies \texttt{Sched}.
+\end{description}
+
+From the directory \texttt{lean/}, \texttt{lake build} checks the file with the pinned toolchain and Mathlib revision. Our run used \texttt{lake env lean Safety.lean} in a project with the same toolchain and the same Mathlib revision; it ends without output, and \texttt{\#print axioms} reports \texttt{propext}, \texttt{Classical.choice} and \texttt{Quot.sound} for the last three theorems.
+
+\section{Whole-Position Release: Complexity and the Envelope Guard}\label{cr:complexity}
+
+With whole-position release, full repayment releases the entire lock; a partial repayment, if allowed, releases none. For testing the greatest cash requirement it suffices to consider loans that are either unchanged or fully repaid. A partial repayment reduces debt at an unchanged lock and cannot increase the shortfall. Thus \cref{cr:allpairs} becomes the finite family
+\begin{equation}\label{cr:subsets}
+\sum_{i\in J}d_i\le W+R\!\left(\sum_{i\in J}\ell_i\right)
+\qquad\text{for every subset }J.
+\end{equation}
+For $W=0$ this reduces to the per-loan conditions $d_i\le R(\ell_i)$ by \eqref{cr:superadd}. With a shared positive reserve, testing all subsets can instead be a combinatorial problem.
+
+\begin{samepage}
+\begin{proposition}[Complexity of whole-position coverage]\label{cr:hardness}
+Consider the decision problem \eqref{cr:subsets} with positive integer collateral amounts encoded in binary, positive rational debts, non-negative rational $W$, and $R(q)=q+q^2/2$ on a bounded domain containing the supply. Deciding whether the book is safe is coNP-complete. With integer locks of total $L$, a dynamic program with $O(nL)$ rational arithmetic operations decides it. Thus the hardness established here is weak; there is no claim of strong hardness or intractability for every class of curves and books.
+\end{proposition}
+\end{samepage}
+\begin{proof}
+An unsafe subset is a polynomial-size certificate: sum its integer locks and rational debts and compare them with $W+R(q)$ using exact rational arithmetic. The complement of safety is therefore in NP.
+
+Reduce from PARTITION, whose input is a list of positive integers $w_i$ summing to $2B$, and whose question is whether a subset sums to $B$ \citep{karp1972}. The even-total restriction does not change NP-completeness, since odd-total instances are immediate no instances. Set
+\[
+\ell_i=w_i,\qquad d_i=(1+B)w_i,\qquad
+W=\frac{B^2}{2}-\frac14,\qquad S=L=2B.
+\]
+All numbers have polynomial encoding length. A schedule $p(q)=1+q$ on $[0,2B+1)$ meets \cref{def:schedule}. For a retained subset of total lock $x$, the debt minus curve reserve is
+\begin{equation}\label{cr:partitiondeficit}
+(1+B)x-R(x)=Bx-\frac{x^2}{2}
+=\frac{B^2}{2}-\frac{(x-B)^2}{2}.
+\end{equation}
+If $x=B$, it exceeds $W$ by $1/4$. Otherwise $x$ is an integer with $|x-B|\ge1$, so it is at most $B^2/2-1/2<W$. There is an unsafe subset exactly when the PARTITION instance is a yes instance. Hence unsafety is NP-hard and safety is coNP-hard; membership proves completeness.
+
+For the dynamic program, let $M_j(x)$ be the largest debt of a subset of the first $j$ loans with total lock exactly $x$, or $-\infty$ if none exists. Start with $M_0(0)=0$ and all other values $-\infty$, and use
+\[
+M_j(x)=\max\{M_{j-1}(x),\ M_{j-1}(x-\ell_j)+d_j\},
+\]
+omitting the second term for $x<\ell_j$. Test $M_n(x)\le W+R(x)$ for all $0\le x\le L$. There are $O(nL)$ states, and sums and comparisons of the rational debts have polynomial bit length. This is a pseudopolynomial algorithm because the binary encoding of $L$ can be much shorter than $L$.
+\end{proof}
+
+\paragraph{Reachability of the constructed book.}
+The reduction does not rely on a negative initial cash balance. It has $D=(1+B)2B=R(2B)$ and $A=W\ge0$. It can also be reached without violating instantaneous gross coverage in a model that replaces the floor loan cap by the immediate aggregate test. Buy all $2B$ tokens at curve cost, contribute $W$, and originate every lock $w_i$ with debt $w_i$. At this stage all tokens are locked and debt is $2B$. Top up each debt to $(1+B)w_i$. Total debt never exceeds $R(2B)$, cash never falls below $W$, and there are no free tokens during the top-ups. If a partition exists, fully repay the complementary loans and redeem their $B$ released tokens. The cash shortfall is $1/4$. These top-ups are deliberately outside the original floor cap; the construction is not a counterexample to \cref{thm:safety}.
+
+The complexity comparison also has a limited meaning. Whole-position release admits fewer repayment paths than proportional release, so for the same initial book its minimum required reserve is no greater. Its subset condition can nevertheless be harder to evaluate exactly. The one-dimensional envelope solves the divisible problem because every fractional residual allocation is permitted; it is not the exact envelope for a discrete book.
+
+\begin{proposition}[The envelope as a guard for whole-position release]\label{cr:guardbound}
+For the same book and curve let $W^{\mathrm{prop}}$ be the reserve \eqref{cr:wmin} required under proportional release and $W^{\mathrm{whole}}$ the least $W$ satisfying \eqref{cr:subsets}. Then
+\[
+W^{\mathrm{whole}}\;\le\;W^{\mathrm{prop}}\;\le\;W^{\mathrm{whole}}+\max_i\,(d_i-\Pf\ell_i)^+ .
+\]
+\end{proposition}
+\begin{proof}
+Every whole-position configuration is a proportional one, which gives the first inequality. For the second, let $q^\ast$ maximize $H-R$ and let $j$ be the index with $Q_{j-1}\le q^\ast\le Q_j$ in the order of \cref{cr:algorithm}, so that $H(q^\ast)=B_{j-1}+\theta d_j$ and $q^\ast=Q_{j-1}+\theta\ell_j$ with $0\le\theta\le1$. The subset of the first $j-1$ loans gives $W^{\mathrm{whole}}\ge B_{j-1}-R(Q_{j-1})$. Hence
+\[
+W^{\mathrm{prop}}-W^{\mathrm{whole}}\le\theta d_j-\bigl[R(Q_{j-1}+\theta\ell_j)-R(Q_{j-1})\bigr]\le\theta\,(d_j-\Pf\ell_j)
+\]
+by \cref{lem:R}, and the right side is at most $(d_j-\Pf\ell_j)^+$.
+\end{proof}
+
+A contract with whole-position release can therefore use the sorted envelope as its guard. For a curve given by $m$ price intervals as in \cref{cr:algorithm}, the guard takes $O(n\log n+m)$ comparisons and arithmetic operations (bit complexity aside), it is safe, and it asks for more reserve than necessary by at most the largest amount by which a single loan exceeds the floor value of its lock; for an empty book that maximum is zero. The hardness result above concerns the exact requirement and is no obstacle to a design. The dynamic program can be impractical when the total collateral remains large after dividing the locks by their greatest common unit, since its table has one row per unit; the envelope guard does not depend on the magnitude of the collateral.
+
+The constant $1$ in the bound cannot be improved in general, and it can be improved for linear prices.
+
+\begin{corollary}[Sharpness]\label{cr:guardsharp}
+(a) For every $\varepsilon\in(0,1)$ there is a schedule and a single loan with $W^{\mathrm{whole}}=0$, $(d-\Pf\ell)^+=1$ and $W^{\mathrm{prop}}=1-\varepsilon$. (b) For a linear price $p(q)=\Pf+kq$ with $k\ge0$,
+\[
+W^{\mathrm{prop}}-W^{\mathrm{whole}}\;\le\;\tfrac14\,\max_i\,(d_i-\Pf\ell_i)^+ ,
+\]
+and the factor $\tfrac14$ is attained.
+\end{corollary}
+\begin{proof}
+(a) Let $p=1$ on $[0,1-\varepsilon)$ and $p=1+1/\varepsilon$ on $[1-\varepsilon,1)$, and take one loan with $\ell=1$, $d=2$. Then $R(1)=2=d$, so $W^{\mathrm{whole}}=0$, while $H(q)-R(q)=2q-q=q$ on $[0,1-\varepsilon]$ gives $W^{\mathrm{prop}}=1-\varepsilon$. (b) If $H-R$ is maximal at a point $Q_j$ of the partition, the gap is zero. Otherwise the maximum is at an interior point $q^\ast=Q_{j-1}+\theta\ell_j$ with $0<\theta<1$ and $k>0$, where the slope condition is $a_j=\Pf+kq^\ast$. On $[Q_{j-1},Q_j]$ the function $H-R$ is a quadratic with leading coefficient $-k/2$ and maximum at $q^\ast$, so it falls short of its maximum by $k(\theta\ell_j)^2/2$ at $Q_{j-1}$ and by $k((1-\theta)\ell_j)^2/2$ at $Q_j$. Both endpoints are whole-position configurations, so the gap is at most $\tfrac12k\ell_j^2\min\{\theta^2,(1-\theta)^2\}$. The slope condition gives $d_j-\Pf\ell_j=k\ell_jq^\ast\ge k\theta\ell_j^2$. The ratio of the two is at most $\min\{\theta^2,(1-\theta)^2\}/(2\theta)\le\tfrac14$, with equality only at $\theta=\tfrac12$ and $Q_{j-1}=0$. One loan with $\Pf=k=\ell=1$ and $d=R(1)=\tfrac32$ attains it: $W^{\mathrm{whole}}=0$, $W^{\mathrm{prop}}=\tfrac18$ and $d-\Pf\ell=\tfrac12$.
+\end{proof}
+
+Script block N15 of the supplementary material checks the inequalities of \cref{cr:guardbound,cr:guardsharp} on 3{,}000 random books with linear prices in exact arithmetic, and evaluates the example of part~(a).
+
+
+\section{Reproduction}\label{app:repro}
+
+The supplementary material contains the Lean file, the contract with its tests, the reference model, the scripts and their saved outputs. The Python scripts need Python~3 and no packages.
+\begin{sloppypar}
+\begin{itemize}
+\item \texttt{python3 -I scripts/credit\_frontier.py} runs the exact-rational checks of \cref{sec:evidence}.
+\item \texttt{python3 -I scripts/numbers.py} prints the numerical examples; blocks N14 to N17 concern this version.
+\item \texttt{python3 -I scripts/test\_model.py 20000 300} runs the randomized tests of the reference model.
+\item From \texttt{lean/}, \texttt{lake build} checks the formal proof. From \texttt{contracts/}, \texttt{forge test} runs the contract tests.
+\end{itemize}
+\end{sloppypar}
